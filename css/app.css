@@ -240,3 +240,15 @@ details.fold[open] > summary::after { content: "–"; }
 .mirror .m-count { position: absolute; left: 8px; bottom: 6px; font-family: var(--f-display); font-weight: 800; font-size: 2.2rem; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
 .mirror .m-msg { position: absolute; left: 6px; right: 6px; top: 6px; font-size: .75rem; font-weight: 700; color: #fff; background: rgba(200,67,43,.85); border-radius: 8px; padding: 3px 6px; text-align: center; }
 .mirror .m-msg:empty { display: none; }
+
+/* Lettore leggibile da lontano: tutto lo sfondo prende il colore della fase, timer grande */
+.player { background: var(--phase-soft, var(--bg)); transition: background .4s; }
+.player.is-party { background: var(--bg); }
+.p-phase { font-size: 1.05rem; padding: 6px 14px; }
+.ring { width: 150px; height: 150px; }
+.ring circle { stroke-width: 10; }
+.ring span { font-size: 3.6rem; }
+@media (max-height: 640px) { .ring { width: 112px; height: 112px; } .ring span { font-size: 2.6rem; } }
+
+/* Avviso nuova versione */
+.upd { position: fixed; left: 50%; transform: translateX(-50%); top: calc(10px + env(safe-area-inset-top, 0px)); z-index: 70; border: 0; border-radius: 999px; padding: 10px 18px; font: inherit; font-weight: 700; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(0,0,0,.25); cursor: pointer; }

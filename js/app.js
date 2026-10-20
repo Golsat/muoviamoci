@@ -4,7 +4,7 @@
   const KEY = "muoviamoci-v1";
   const DEF = {
     settings: { yoga: 3, focus: [], intensity: "normale", minutes: 45, guide: "completa", volume: 1, reminder: "17:30" },
-    excluded: [], knee: [], tweak: {}, done: {}, moves: {}, votes: [], plans: [], history: [], checksSeen: [],
+    excluded: [], knee: [], tweak: {}, done: {}, moves: {}, skipped: {}, offlineReady: false, votes: [], plans: [], history: [], checksSeen: [],
     name: "", welcomed: false, look: {}, prog: { A: 0, B: 0 }, progMark: { A: -1, B: -1 }, tests: [], testSnooze: "", cards: [], mirror: null
   };
   let S;
@@ -57,11 +57,19 @@
 
   // ---------- Calendario e seduta del giorno ----------
   function sessions() {
-    return P.plan().map(s => ({ ...s, date: S.moves[s.i] || s.date, done: !!S.done[s.i] })).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.i - b.i);
+    return P.plan().map(s => ({ ...s, date: S.moves[s.i] || s.date, note: S.moves[s.i] ? "" : s.note, done: !!S.done[s.i] })).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.i - b.i);
   }
+  // Seduta proposta: quella di oggi; altrimenti una saltata da non più di 2 giorni (recupero);
+  // altrimenti la prossima. Le sedute più vecchie non fatte restano indietro: il programma va avanti.
   function nextSession() {
-    const all = sessions();
-    return all.find(s => !s.done) || null;
+    const t = P.today(), all = sessions().filter(s => !s.done && !S.skipped[s.i]);
+    return all.find(s => s.date === t) || all.filter(s => s.date < t && s.date >= P.addDays(t, -2)).pop() || all.find(s => s.date > t) || null;
+  }
+  // Ferma da più di 10 giorni con sedute non fatte: si può ripartire da dove era rimasta
+  function stalled() {
+    const t = P.today();
+    if (S.history.some(h => h.date >= P.addDays(t, -10))) return null;
+    return sessions().find(s => !s.done && !S.skipped[s.i] && s.date < P.addDays(t, -2)) || null;
   }
   function stFor() { return { ...S.settings, excluded: S.excluded, knee: S.knee, tweak: S.tweak, prog: S.prog }; }
   const sessTitle = s => s.type === "P" ? s.name : `Seduta ${s.type} · ${P.TITLE[s.type]}`;
@@ -91,14 +99,14 @@
     let hero = "";
     if (s) {
       const sess = P.build(s, stFor()), steps = P.steps(sess), when = s.date === t ? "Oggi" : s.date < t ? "Da recuperare" : "Prossima seduta";
-      const late = s.date < P.addDays(t, -7);
+      const late = s.date < t;
       hero = `<section class="card hero" aria-label="Seduta">
         <div class="between"><span class="lbl">${when} · ${esc(P.fmt(s.date, true))}</span><span class="pill ${s.type.toLowerCase()}">${s.type}</span></div>
         <h2>${esc(P.TITLE[s.type])}</h2>
         <div class="session-meta"><span>${esc(P.blockName(s.block))}</span><span>${esc(weekLabel(s))}</span>${s.note ? `<span>${esc(s.note)}</span>` : ""}</div>
         <div class="between"><div><div class="est num">${mins(P.totalSec(steps))}<small style="font-size:1rem"> min</small></div><span class="muted">${new Set(steps.filter(x => x.kind === "work").map(x => x.ex.id)).size} esercizi · ${sess.work}" lavoro / ${sess.rest}" recupero${S.prog[s.type] > 0 ? ` · +${S.prog[s.type]}" per i tuoi progressi` : ""}</span></div></div>
         <button class="btn primary big" id="start">${I.play} Inizia</button>
-        ${late ? `<button class="btn ghost" id="reschedule" style="color:inherit;border-color:currentColor">Riprogramma da oggi</button>` : ""}
+        ${late ? `<button class="btn ghost" id="skip" style="color:inherit;border-color:currentColor">Salta questa seduta</button>` : ""}
       </section>`;
     } else hero = `<section class="card hero"><h2>Programma completato</h2><p>Bravissima! Chiedi a Claude il programma dei prossimi mesi.</p></section>`;
 
@@ -128,7 +136,7 @@
     </main>`;
     if (s) {
       $("#start").onclick = () => startSession(s);
-      const rs = $("#reschedule"); if (rs) rs.onclick = () => reschedule(s);
+      const sk = $("#skip"); if (sk) sk.onclick = () => { S.skipped[s.i] = P.today(); save(); toast("Seduta saltata: si va avanti con il programma"); renderOggi(); };
     }
     $("#settings").onclick = openSettings;
     $("#regbox").ontoggle = e => { regOpen = e.target.open; };
@@ -146,10 +154,12 @@
     return `<div class="preview-list">${sess.blocks.map(b => `<div class="blk">${esc(b.n || { risc: "Riscaldamento", allung: "Allungamento", yoga: "Yoga flow", finale: "Finale" }[b.k] || "")}${b.giri > 1 ? ` · ${b.giri} giri` : ""}</div>` +
       b.items.map(x => { const [id, sx] = x.split(" "); return `<button type="button" class="pv-ex" data-ex="${id}"><span>${esc(BY[id].n)}${sx ? ' <span class="muted">destra e sinistra</span>' : ""}</span><span class="muted" aria-hidden="true">›</span></button>`; }).join("")).join("")}</div>`;
   }
+  // Sposta tutte le sedute non fatte (da quella in cui si è fermata) di settimane intere:
+  // la prima cade nel suo stesso giorno della settimana, da oggi in poi
   function reschedule(s) {
-    const all = sessions().filter(x => !x.done), weeks = Math.ceil((P.parse(P.today()) - P.parse(s.date)) / 864e5 / 7);
+    const all = sessions().filter(x => !x.done && !S.skipped[x.i] && x.date >= s.date), weeks = Math.ceil((P.parse(P.today()) - P.parse(s.date)) / 864e5 / 7);
     all.forEach(x => { S.moves[x.i] = P.addDays(x.date, weeks * 7); });
-    save(); toast(`Programma spostato avanti di ${weeks} settimane`); renderOggi();
+    save(); toast(`Ripartiamo: programma spostato avanti di ${weeks} ${weeks === 1 ? "settimana" : "settimane"}`); render();
   }
 
   // ---------- CALENDARIO ----------
@@ -175,15 +185,22 @@
       <p class="muted">Tocca un giorno colorato per vedere la seduta, spostarla o farla subito.</p>
       <div class="months">${months.map(monthHtml).join("")}</div>
       <section class="card"><h3>Promemoria sul telefono</h3>
-        <p class="muted">Scarica le sedute nel calendario del telefono, con un avviso all'ora che scegli.</p>
+        <p class="muted">Aggiunge al tuo calendario un appuntamento ogni martedì e giovedì, con un avviso all'ora che scegli. Si apre Google Calendar: premi «Salva».</p>
         <div class="row"><label for="remt" class="lbl">Ora</label><input type="time" id="remt" value="${esc(S.settings.reminder)}" style="font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
-        <button class="btn primary small" id="ics">Aggiungi al calendario</button></div></section>
-      ${n && n.date < P.addDays(t, -7) ? `<button class="btn" id="resched">Riprogramma da oggi le sedute rimaste</button>` : ""}
+        <button class="btn primary small" id="gcal">Aggiungi a Google Calendar</button></div>
+        <button class="btn ghost small" id="ics">Altro calendario (file .ics)</button></section>
+      ${stalled() ? `<section class="card"><h3>Ripartire da dove eri rimasta?</h3><p class="muted">Sei ferma da più di 10 giorni. Puoi spostare in avanti tutte le sedute non fatte, così riprendi dal punto del programma in cui eri (oppure lasciare tutto com'è e continuare dal calendario).</p><button class="btn primary small" id="resched">Riparti da ${esc(P.fmt(stalled().date))}</button></section>` : ""}
     </main>`;
     app.querySelectorAll("button.day").forEach(b => b.onclick = () => openDay(b.dataset.date, byDate[b.dataset.date]));
     $("#remt").onchange = e => { S.settings.reminder = e.target.value; save(); };
     $("#ics").onclick = downloadIcs;
-    const rs = $("#resched"); if (rs) rs.onclick = () => { reschedule(n); go("calendario"); };
+    $("#gcal").onclick = () => {
+      const [hh, mm] = (S.settings.reminder || "17:30").split(":").map(Number), first = sessions().find(x => !x.done && x.date >= P.today()) || sessions()[0];
+      const pad = x => String(x).padStart(2, "0"), d = first.date.replace(/-/g, ""), end = new Date(2000, 0, 1, hh, mm + 45);
+      const q = new URLSearchParams({ action: "TEMPLATE", text: "Muoviamoci! Seduta", dates: `${d}T${pad(hh)}${pad(mm)}00/${d}T${pad(end.getHours())}${pad(end.getMinutes())}00`, ctz: "Europe/Rome", recur: "RRULE:FREQ=WEEKLY;BYDAY=TU,TH;UNTIL=20270630", details: "Martedì seduta A, giovedì seduta B. Apri Muoviamoci! e premi Inizia. Il 24 e il 31 dicembre la seduta è anticipata al mercoledì." });
+      window.open("https://calendar.google.com/calendar/render?" + q.toString(), "_blank");
+    };
+    const rs = $("#resched"); if (rs) rs.onclick = () => { reschedule(stalled()); go("calendario"); };
   }
   function openDay(date, ss) {
     const body = ss.map(s => {
@@ -777,5 +794,25 @@
   // Ritorno all'app un altro giorno: la schermata si aggiorna con la data nuova
   let shownDay = P.today();
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && P.today() !== shownDay) { shownDay = P.today(); if (!document.querySelector(".player")) render(); } });
-  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => { });
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register("sw.js").then(reg => {
+      reg.addEventListener("updatefound", () => {
+        const w = reg.installing; if (!w) return;
+        w.addEventListener("statechange", () => {
+          if (w.state !== "activated") return;
+          if (hadController) updateBanner();
+          else if (!S.offlineReady) { S.offlineReady = true; save(); toast("Pronta: da ora funziona anche senza internet"); }
+        });
+      });
+      // Controlla gli aggiornamenti ogni volta che l'app torna in primo piano
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => { }); });
+    }).catch(() => { });
+  }
+  function updateBanner() {
+    if (document.querySelector(".upd")) return;
+    const b = document.createElement("button"); b.className = "upd"; b.textContent = "Nuova versione pronta · tocca per aggiornare";
+    b.onclick = () => { if (document.querySelector(".player")) { toast("Finisci la seduta, poi aggiorna"); return; } location.reload(); };
+    document.body.appendChild(b);
+  }
 })();

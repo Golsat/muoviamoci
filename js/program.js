@@ -110,7 +110,8 @@ const PROGRAM = (() => {
     // Cursore yoga <-> tonificazione (3 = più tonificazione, valore di partenza)
     const extraYoga = ["Y1", "Y2", "Y6 x2", "R3", "Y7"];
     const inSess = x => T.some(b => b.items.some(y => y.split(" ")[0] === x.split(" ")[0]));
-    if (st.yoga === 4) stretch.items = [...stretch.items.slice(0, 2), "Y8"];
+    // «Solo forza»: meno allungamento, in cambio il finale di forza
+    if (st.yoga === 4) { stretch.items = [...stretch.items.slice(0, 2), "Y8"]; if (!T.some(b => b.k === "finale")) T.splice(T.indexOf(stretch), 0, { k: "finale", clip: "blocco_finale", items: [s.type === "A" ? "G2" : "B7"], dur: 90 }); }
     if (st.yoga <= 2) { forza[1].giri = 1; stretch.items.splice(-1, 0, ...extraYoga.filter(x => !inSess(x)).slice(0, 2)); }
     if (st.yoga <= 1) { forza[0].giri = 1; stretch.items.splice(-1, 0, ...extraYoga.filter(x => !inSess(x))); }
     if (st.yoga === 0) { forza[1].items = forza[1].items.slice(0, 2); }
@@ -130,7 +131,21 @@ const PROGRAM = (() => {
       const r = replacement(id, used(), { ...st, kneeStrict: st.knee.includes(id) }, s.block);
       return r + (sx ? " x2" : "");
     });
-    return { s, blocks: T.map(b => ({ ...b, giri: b.k === "forza" ? (b.giri || giri) : 1 })), work, rest, tweak: st.tweak || {} };
+    const sess = { s, blocks: T.map(b => ({ ...b, giri: b.k === "forza" ? (b.giri || giri) : 1 })), work, rest, tweak: st.tweak || {} };
+    // Durata massima rispettata davvero: si accorcia prima l'allungamento, poi il riscaldamento,
+    // poi il finale, poi un giro di circuito, poi l'ultimo esercizio dei circuiti
+    const cap = (st.minutes || 45) * 60 + 30;
+    for (let guard = 0; guard < 30 && totalSec(steps(sess)) > cap; guard++) {
+      const B = sess.blocks, str = B.find(b => b.k === "allung" || b.k === "yoga"), risc = B.find(b => b.k === "risc"), fin = B.findIndex(b => b.k === "finale");
+      const two = B.filter(b => b.k === "forza" && b.giri > 1).pop(), long = B.filter(b => b.k === "forza" && b.items.length > (st.minutes <= 20 ? 2 : 3)).pop();
+      if (str && str.items.length > 3) str.items.splice(-2, 1);
+      else if (risc && risc.items.length > (st.minutes <= 20 ? 3 : 4)) risc.items.splice(-2, 1);
+      else if (fin >= 0) B.splice(fin, 1);
+      else if (two) two.giri = 1;
+      else if (long) long.items.pop();
+      else break;
+    }
+    return sess;
   }
 
   // Seduta da un piano personale
