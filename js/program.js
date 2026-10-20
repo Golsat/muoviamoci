@@ -65,9 +65,9 @@ const PROGRAM = (() => {
     let T;
     if (type === "A") {
       T = [
-        { k: "risc", clip: "blocco_risc", items: ["R5", "R8", "E1 x2", "R1", "R2", "R4"] },
+        { k: "risc", clip: "blocco_risc", items: ["R5", "R8", "E1 x2", "R4"] },
         { k: "forza", clip: "blocco_c1", n: "Circuito 1 · glutei", items: [b2 ? "G9" : "G1", "G4 x2", "G5 x2", b2 ? "G11 x2" : "G10"] },
-        { k: "forza", clip: "blocco_c2", n: "Circuito 2 · cosce e addome", items: ["C5", "E2", "C1 x2", "C2", "A1", "A5 x2"] },
+        { k: "forza", clip: "blocco_c2", n: "Circuito 2 · cosce e addome", items: ["C5", "E2", "C1 x2", "C2", "A1", "A4", "A5 x2"] },
         { k: "allung", clip: "blocco_allung", items: ["Y7", "Y3 x2", "Y4 x2", "Y5 x2", "Y8"] }
       ];
       if (week === 2 || week === 3) { T[1].items.splice(1, 2, "G5 x2", "G7 x2"); T[2].items[2] = "C4 x2"; }
@@ -75,7 +75,7 @@ const PROGRAM = (() => {
       if (w.finale) T.splice(3, 0, { k: "finale", clip: "blocco_finale", items: ["G2"], dur: 120 });
     } else {
       T = [
-        { k: "risc", clip: "blocco_risc", items: ["R5", "E3", "R6", "R1", "R7 x2", "R3"] },
+        { k: "risc", clip: "blocco_risc", items: ["R5", "E3", "R6", "R7 x2", "R3"] },
         { k: "forza", clip: "blocco_c1", n: "Circuito 1 · braccia e postura", items: b2 ? ["B2", "M4", "M3", "M1", "B6", "M6", "B3"] : ["B1", "M4", "M3", "M1", "M2", "B3", "B4"] },
         { k: "forza", clip: "blocco_c2", n: "Circuito 2 · addome", items: ["A6", "A7", "A3", "A8", "A2", "E4"] },
         { k: "yoga", clip: "blocco_yoga", items: ["Y1", "Y2", "Y6 x2", "Y5 x2", "Y8"] }

@@ -272,3 +272,5 @@ details.fold[open] > summary::after { content: "–"; }
 .trip-row .pc { width: 96px; height: auto; flex: none; border-radius: 6px; }
 .trip-row > span { min-width: 0; }
 .jp { font-family: var(--f-head); }
+/* Finestre aperte durante la seduta (es. «Vuoi uscire?»): sopra il lettore */
+.player ~ .sheet-back { z-index: 60; }

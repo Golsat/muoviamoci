@@ -138,6 +138,7 @@
         <div><span class="lbl">Intensità</span><div class="seg" id="intensity" style="margin-top:6px">${["leggera", "normale", "sfidante"].map(k => `<button data-v="${k}" aria-pressed="${st.intensity === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div></div>
         <div><span class="lbl">Durata massima</span><div class="seg" id="minutes" style="margin-top:6px">${[20, 30, 45].map(k => `<button data-v="${k}" aria-pressed="${st.minutes === k}">${k} min</button>`).join("")}</div></div>
         <div><span class="lbl">Recupero per prepararsi</span><div class="seg" id="restx" style="margin-top:6px">${[[0, "Normale"], [10, "+10 s"], [20, "+20 s"]].map(([k, n]) => `<button data-v="${k}" aria-pressed="${(st.restExtra || 0) === k}">${n}</button>`).join("")}</div><span class="muted" style="font-size:.85rem">Più tempo fra un esercizio e l'altro; gli esercizi restano gli stessi.</span></div>
+        <div><button class="btn small ghost" id="regreset">Reset: torna ai valori iniziali</button></div>
       </details>
       ${tripCard}
     </main>`;
@@ -155,6 +156,7 @@
     $("#intensity").onclick = e => { const b = e.target.closest("button"); if (!b) return; st.intensity = b.dataset.v; save(); renderOggi(); };
     $("#minutes").onclick = e => { const b = e.target.closest("button"); if (!b) return; st.minutes = +b.dataset.v; save(); renderOggi(); };
     $("#restx").onclick = e => { const b = e.target.closest("button"); if (!b) return; st.restExtra = +b.dataset.v; save(); renderOggi(); };
+    $("#regreset").onclick = () => { for (const k of ["yoga", "focus", "intensity", "minutes", "restExtra"]) st[k] = structuredClone(DEF.settings[k]); save(); renderOggi(); toast("Regolazioni riportate ai valori iniziali"); };
     app.querySelectorAll("[data-gotab]").forEach(b => b.onclick = () => go(b.dataset.gotab));
     app.querySelectorAll("[data-seen]").forEach(b => b.onclick = () => { S.checksSeen.push(b.dataset.seen); save(); renderOggi(); });
   }

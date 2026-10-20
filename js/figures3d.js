@@ -34,8 +34,9 @@ const FIG3D = (() => {
       { ...HANDS_HIPS, shR: [-15, 0, -28], elR: [-30, 0, 0], hpL: [0, 0, 3] },
       { ...HANDS_HIPS, shR: [-15, 0, -28], elR: [-30, 0, 0], hpL: [0, 0, 35], hpR: [0, 0, 4] }] },
     A5: { cam: [6, 22], mat: 90, an: "elL", K: [
-      { root: [0, 0, -86], shL: [0, 0, 70], elL: [-90, 0, 0], shR: [0, 0, -10], knL: [90, 0, 0], knR: [90, 0, 0], neck: [0, 0, -6] },
-      { root: [0, 0, -68], shL: [0, 0, 75], elL: [-90, 0, 0], shR: [0, 0, -10], knL: [90, 0, 0], knR: [90, 0, 0], neck: [0, 0, -10] }] },
+      // Avambraccio, ginocchio e piede di sotto sempre a terra; giù = bacino appoggiato, su = linea testa-ginocchia
+      { root: [0, 0, -88], spine: [0, 0, 40], shL: [0, 0, 48], elL: [-90, 0, 0], shR: [0, 0, -10], hpR: [5, 0, 0], knL: [90, 0, 0], knR: [90, 0, 0], neck: [0, 0, -6] },
+      { root: [0, 0, -73], spine: [0, 0, 10], shL: [0, 0, 64], elL: [-90, 0, 0], shR: [0, 0, -10], hpL: [6, 0, 0], hpR: [13, 0, 0], knL: [90, 0, 0], knR: [90, 0, 0], neck: [0, 0, -6] }] },
     A7: { cam: [20, 18], K: [
       { hpL: [-90, 0, 0], hpR: [-90, 0, 0], anL: [-20, 0, 0], anR: [-20, 0, 0], shL: [0, 0, 88], shR: [0, 0, -88], spine: [0, -40, 0], neck: [0, -10, 0] },
       { hpL: [-90, 0, 0], hpR: [-90, 0, 0], anL: [-20, 0, 0], anR: [-20, 0, 0], shL: [0, 0, 88], shR: [0, 0, -88], spine: [0, 40, 0], neck: [0, 10, 0] }] },
