@@ -232,3 +232,11 @@ details.fold[open] > summary::after { content: "–"; }
 .confetti i { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; animation: fall 3.2s linear 2 forwards; opacity: .9; }
 @keyframes fall { to { transform: translateY(105vh) rotate(540deg); } }
 @media (prefers-reduced-motion: reduce) { .confetti { display: none; } .newcard { animation: none; } }
+
+/* Specchio intelligente */
+.mirror { position: absolute; top: 10px; right: 10px; width: 34%; aspect-ratio: 3/4; border-radius: 14px; overflow: hidden; background: #111; box-shadow: 0 4px 14px rgba(0,0,0,.3); z-index: 3; opacity: .55; transition: opacity .3s; }
+.mirror.on { opacity: 1; outline: 3px solid var(--phase, var(--accent)); }
+.mirror video, .mirror canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.mirror .m-count { position: absolute; left: 8px; bottom: 6px; font-family: var(--f-display); font-weight: 800; font-size: 2.2rem; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+.mirror .m-msg { position: absolute; left: 6px; right: 6px; top: 6px; font-size: .75rem; font-weight: 700; color: #fff; background: rgba(200,67,43,.85); border-radius: 8px; padding: 3px 6px; text-align: center; }
+.mirror .m-msg:empty { display: none; }

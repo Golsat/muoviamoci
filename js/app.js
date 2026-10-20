@@ -48,7 +48,7 @@
   // Figura: manichino 3D, oppure figura 2D se il telefono non supporta il 3D
   const has3D = (() => { try { const c = document.createElement("canvas"); return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl"))); } catch (e) { return false; } })();
   function figure(container, id, opts = {}) {
-    container.querySelectorAll("canvas, svg.fig").forEach(n => n.remove());
+    container.querySelectorAll(":scope > canvas, :scope > svg.fig").forEach(n => n.remove());
     const e = BY[id] || {};
     let f = has3D ? FIG3D.mount(container, id, { label: e.n, ...opts }) : null;
     if (!f) f = FIG.mount(container, id, { label: e.n, dumbbells: !!e.m, forceMotion: true, ...opts });
@@ -652,6 +652,14 @@
       q("pblock").textContent = st.label || st.block.n || { risc: "Riscaldamento", allung: "Allungamento", yoga: "Yoga flow", finale: "Finale", forza: "Circuito" }[st.block.k];
       const nw = st.kind === "work" ? st : nextWork(i);
       if (nw) showFig(nw.ex.id);
+      // Specchio intelligente: fotocamera accesa dal recupero prima dell'esercizio seguito, spenta dopo
+      if (S.mirror && MIRROR.available()) {
+        const target = nw && MIRROR.supports(nw.ex.id) ? nw.ex.id : null;
+        if (target) {
+          MIRROR.open(q("pstage"), f => say(f, { maxDelay: 2 })).then(ok => { if (!ok) toast("Fotocamera non disponibile: specchio spento per questa seduta"); });
+          MIRROR.track(st.kind === "work" ? target : null);
+        } else MIRROR.close();
+      }
       q("pphase").textContent = st.kind === "work" ? "LAVORO" : st.kind === "rest" ? "RECUPERO" : "SI PARTE";
       q("pside").hidden = !(nw && nw.side); q("pside").textContent = nw && nw.side === "dx" ? "Lato destro" : "Lato sinistro";
       q("pnextlbl").textContent = st.kind === "work" ? (st.giro > 1 ? `Giro ${st.giro}` : "Ora") : "Prossimo";
@@ -701,6 +709,7 @@
       clearInterval(timer); VOICE.stop(); say("g_fine.mp3");
       if (fig && fig.stop) fig.stop();
       try { if (lock) lock.release(); } catch (e) { }
+      try { MIRROR.close(); } catch (e) { }
       // Salvata subito, con i minuti davvero fatti: il giudizio si aggiunge dopo
       const minDone = Math.max(1, Math.round(active / 60));
       const kmBefore = tripKm();
@@ -730,6 +739,7 @@
     }
     function close() {
       playerBack = null;
+      try { MIRROR.close(); } catch (e) { }
       clearInterval(timer); VOICE.stop(); VOICE.onText(null);
       if (fig && fig.stop) fig.stop();
       document.removeEventListener("visibilitychange", onVis);
