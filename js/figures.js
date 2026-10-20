@@ -45,6 +45,7 @@ const FIG = (() => {
     C2: { b: "supKB", K: [{}, BRIDGE], an: "shoulder", d: 3, pr: [{ type: "cushion", j: "kneeN" }] },
     C3: { b: "supKB", K: [{}, { lN: [52, -55], lF: [50, -55] }], d: 2, pr: [{ type: "cushion", j: "kneeN" }] },
     C4: { b: "stand", fr: 1, K: [{ lN: [-88, -88], lF: [-94, -94], aF: [-135, -95], aN: [-80, -90] }, { lN: [-55, -55], lF: [-94, -94], aF: [-135, -95], aN: [-80, -90] }], d: 2.5, pr: [{ type: "chairBack", k: 0, j: "handF" }] },
+    C5: { b: "stand", K: [{ lN: [-50, -87], lF: [-50, -87], aN: [-70, -25], aF: [-68, -25] }, { lN: [-45, -90], lF: [-45, -90], aN: [-70, -25], aF: [-68, -25] }], an: "ankleN", d: 4, pr: [{ type: "wall", k: 1, j: "hip", dx: -7 }] },
 
     A1: { b: "supKB", K: [{ ...TABLE, aN: [90, 90], aF: [92, 92] }, { ...TABLE, lN: [40, -50], fN: 0, aN: [90, 90], aF: [92, 92] }], d: 3 },
     A2: { b: "supKB", K: [{}, { lN: [4, -4], fN: 70 }], d: 3 },
@@ -88,7 +89,7 @@ const FIG = (() => {
   // Muscolo che lavora (zona evidenziata) e ritmo continuo
   const HL_ZONE = { glu: ["glute"], cos: ["thigh"], add: ["core"], bra: ["arm"] };
   const HL = {
-    G10: ["glute", "thigh"], G11: ["glute", "thigh"], C2: ["glute", "thigh"], A5: ["core"], A6: ["back", "glute"],
+    G10: ["glute", "thigh"], C5: ["thigh"], G11: ["glute", "thigh"], C2: ["glute", "thigh"], A5: ["core"], A6: ["back", "glute"],
     B1: ["chest"], B2: ["chest"], M6: ["chest"], B3: ["back"], B4: ["back"], B5: ["back"], B8: ["back"], M4: ["back"],
     M3: ["shoulder"], M5: ["shoulder"], B7: ["shoulder"], R6: ["back"]
   };

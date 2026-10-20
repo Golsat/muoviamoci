@@ -62,7 +62,7 @@ const FIG3D = (() => {
   const EXTRA = {
     G1: { an: "shL" }, G2: { an: "shL" }, G3: { an: "shL" }, C2: { an: "shL" }, G9: { an: "shL" },
     A6: { an: "knR" }, Y2: { an: "haL" }, B2: { an: "knL" }, A4: { an: "knL" }, R3: { an: "haL" }, G6: { an: "haL" }, G7: { an: "haL" }, G8: { an: "haL" },
-    G10: { an: "anL" }, G11: { an: "anL" }, R8: { an: "anL" }, M4: { an: "anL" }, B1: { an: "anL" }, Y6: { an: "anL" }, B6: { an: "haL" }
+    G10: { an: "anL" }, C5: { an: "anL" }, G11: { an: "anL" }, R8: { an: "anL" }, M4: { an: "anL" }, B1: { an: "anL" }, Y6: { an: "anL" }, B6: { an: "haL" }
   };
   const JMAP = { hip: "root", shoulder: "shL", head: "neck", handN: "haL", handF: "haR", elbowN: "elL", elbowF: "elR", kneeN: "knL", kneeF: "knR", ankleN: "anL", ankleF: "anR" };
 
