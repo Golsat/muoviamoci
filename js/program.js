@@ -51,7 +51,7 @@ const PROGRAM = (() => {
       for (const [type, off] of [["A", 0], ["B", 2]]) {
         let date = addDays(tue, off);
         if (MOVED[date]) date = MOVED[date];
-        out.push({ i: out.length, date, type, block, week, note: NOTES[date] || "" });
+        out.push({ i: out.length, k: `${wk}${type}`, date, type, block, week, note: NOTES[date] || "" }); // k: chiave stabile (settimana + seduta) per done/moves/skipped
       }
       tue = addDays(tue, 7);
     }

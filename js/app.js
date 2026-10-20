@@ -9,6 +9,8 @@
   };
   let S;
   try { S = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || "{}") }; S.settings = { ...DEF.settings, ...S.settings }; } catch (e) { S = structuredClone(DEF); }
+  // Sedute registrate con l'indice (prima del 20/10/2026): si passano alla chiave stabile settimana+seduta (es. "3B")
+  { const pl = P.plan(); for (const m of ["done", "moves", "skipped"]) for (const n of Object.keys(S[m] || {})) if (/^\d+$/.test(n) && pl[n]) { S[m][pl[n].k] = S[m][n]; delete S[m][n]; } }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
   window.FIG_LOOK = S.look;
 
@@ -57,19 +59,19 @@
 
   // ---------- Calendario e seduta del giorno ----------
   function sessions() {
-    return P.plan().map(s => ({ ...s, date: S.moves[s.i] || s.date, note: S.moves[s.i] ? "" : s.note, done: !!S.done[s.i] })).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.i - b.i);
+    return P.plan().map(s => ({ ...s, date: S.moves[s.k] || s.date, note: S.moves[s.k] ? "" : s.note, done: !!S.done[s.k] })).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.i - b.i);
   }
   // Seduta proposta: quella di oggi; altrimenti una saltata da non più di 2 giorni (recupero);
   // altrimenti la prossima. Le sedute più vecchie non fatte restano indietro: il programma va avanti.
   function nextSession() {
-    const t = P.today(), all = sessions().filter(s => !s.done && !S.skipped[s.i]);
+    const t = P.today(), all = sessions().filter(s => !s.done && !S.skipped[s.k]);
     return all.find(s => s.date === t) || all.filter(s => s.date < t && s.date >= P.addDays(t, -2)).pop() || all.find(s => s.date > t) || null;
   }
   // Ferma da più di 10 giorni con sedute non fatte: si può ripartire da dove era rimasta
   function stalled() {
     const t = P.today();
     if (S.history.some(h => h.date >= P.addDays(t, -10))) return null;
-    return sessions().find(s => !s.done && !S.skipped[s.i] && s.date < P.addDays(t, -2)) || null;
+    return sessions().find(s => !s.done && !S.skipped[s.k] && s.date < P.addDays(t, -2)) || null;
   }
   function stFor() { return { ...S.settings, excluded: S.excluded, knee: S.knee, tweak: S.tweak, prog: S.prog }; }
   const sessTitle = s => s.type === "P" ? s.name : `Seduta ${s.type} · ${P.TITLE[s.type]}`;
@@ -136,7 +138,7 @@
     </main>`;
     if (s) {
       $("#start").onclick = () => startSession(s);
-      const sk = $("#skip"); if (sk) sk.onclick = () => { S.skipped[s.i] = P.today(); save(); toast("Seduta saltata: si va avanti con il programma"); renderOggi(); };
+      const sk = $("#skip"); if (sk) sk.onclick = () => { S.skipped[s.k] = P.today(); save(); toast("Seduta saltata: si va avanti con il programma"); renderOggi(); };
     }
     $("#settings").onclick = openSettings;
     $("#regbox").ontoggle = e => { regOpen = e.target.open; };
@@ -157,8 +159,8 @@
   // Sposta tutte le sedute non fatte (da quella in cui si è fermata) di settimane intere:
   // la prima cade nel suo stesso giorno della settimana, da oggi in poi
   function reschedule(s) {
-    const all = sessions().filter(x => !x.done && !S.skipped[x.i] && x.date >= s.date), weeks = Math.ceil((P.parse(P.today()) - P.parse(s.date)) / 864e5 / 7);
-    all.forEach(x => { S.moves[x.i] = P.addDays(x.date, weeks * 7); });
+    const all = sessions().filter(x => !x.done && !S.skipped[x.k] && x.date >= s.date), weeks = Math.ceil((P.parse(P.today()) - P.parse(s.date)) / 864e5 / 7);
+    all.forEach(x => { S.moves[x.k] = P.addDays(x.date, weeks * 7); });
     save(); toast(`Ripartiamo: programma spostato avanti di ${weeks} ${weeks === 1 ? "settimana" : "settimane"}`); render();
   }
 
@@ -209,7 +211,7 @@
         <h3>${esc(P.TITLE[s.type])}</h3><p class="muted">${esc(P.blockName(s.block))} · ${esc(weekLabel(s))} · circa ${mins(P.totalSec(steps))} min</p>${s.note ? `<p>${esc(s.note)}</p>` : ""}
         <details class="fold"><summary>Esercizi</summary>${previewList(sess)}</details>
         <div class="row"><button class="btn primary small" data-start="${s.i}">${I.play} Inizia ora</button>
-        <label class="lbl" for="mv${s.i}">Sposta al</label><input type="date" id="mv${s.i}" data-move="${s.i}" value="${s.date}" style="font:inherit;padding:6px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)"></div></section>`;
+        <label class="lbl" for="mv${s.i}">Sposta al</label><input type="date" id="mv${s.i}" data-move="${s.k}" value="${s.date}" style="font:inherit;padding:6px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)"></div></section>`;
     }).join("");
     const sh = sheet(`<h2>${esc(P.fmt(date, true))}</h2>${body}`);
     sh.querySelectorAll("[data-start]").forEach(b => b.onclick = () => { closeSheet(); startSession(ss.find(x => x.i == b.dataset.start)); });
@@ -220,7 +222,7 @@
     const pad = n => String(n).padStart(2, "0");
     const ev = sessions().filter(s => !s.done && s.date >= P.today()).map(s => {
       const d = s.date.replace(/-/g, ""), end = new Date(P.parse(s.date).getTime()); end.setHours(+hh, +mm + 45);
-      return ["BEGIN:VEVENT", `UID:muoviamoci-${s.i}-${d}@app`, `DTSTAMP:${d}T000000`, `DTSTART:${d}T${pad(hh)}${pad(mm)}00`, `DTEND:${d}T${pad(end.getHours())}${pad(end.getMinutes())}00`,
+      return ["BEGIN:VEVENT", `UID:muoviamoci-${s.k}-${d}@app`, `DTSTAMP:${d}T000000`, `DTSTART:${d}T${pad(hh)}${pad(mm)}00`, `DTEND:${d}T${pad(end.getHours())}${pad(end.getMinutes())}00`,
         `SUMMARY:Muoviamoci! Seduta ${s.type}`, `DESCRIPTION:${P.TITLE[s.type]}`, "BEGIN:VALARM", "TRIGGER:-PT10M", "ACTION:DISPLAY", "DESCRIPTION:Muoviamoci!", "END:VALARM", "END:VEVENT"].join("\r\n");
     });
     const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Muoviamoci//IT", ...ev, "END:VCALENDAR"].join("\r\n");
@@ -732,7 +734,7 @@
       const kmBefore = tripKm();
       const entry = { date: P.today(), title: meta.title, min: minDone, rating: "", type: meta.planned ? meta.planned.type : "P" };
       S.history.push(entry);
-      if (meta.planned) S.done[meta.planned.i] = { date: P.today(), rating: "" };
+      if (meta.planned) S.done[meta.planned.k] = { date: P.today(), rating: "" };
       save();
       const km = tripKm(), fresh = newCards(), streak = weekStreak(), tot = S.history.length;
       el.className = "player is-party";
@@ -747,7 +749,7 @@
       el.querySelector("#rate").onclick = e => {
         const b = e.target.closest("button"); if (!b) return;
         el.querySelectorAll("#rate button").forEach(x => x.setAttribute("aria-pressed", x === b));
-        entry.rating = b.dataset.v; if (meta.planned) S.done[meta.planned.i].rating = entry.rating; save();
+        entry.rating = b.dataset.v; if (meta.planned) S.done[meta.planned.k].rating = entry.rating; save();
       };
       el.querySelector("#fsave").onclick = () => {
         const msg = entry.rating ? updateProg(entry.type) : "";
