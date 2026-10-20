@@ -835,7 +835,7 @@
   let shownDay = P.today();
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && P.today() !== shownDay) { shownDay = P.today(); if (!document.querySelector(".player")) render(); } });
   let swReg = null, hadController = false;
-  if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.tipo === "versione") { const v = $("#ver"); if (v) v.textContent = `${e.data.built} (${e.data.v})`; } });
+  if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.tipo === "versione") { const v = $("#ver"); if (v) v.textContent = `${e.data.v} (${e.data.built})`; } });
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.register("sw.js").then(reg => {
