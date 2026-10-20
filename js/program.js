@@ -65,22 +65,22 @@ const PROGRAM = (() => {
     let T;
     if (type === "A") {
       T = [
-        { k: "risc", clip: "blocco_risc", items: ["R1", "R2", "R4", "R8", "R5", "G1"] },
+        { k: "risc", clip: "blocco_risc", items: ["R5", "R8", "R1", "R2", "R4"] },
         { k: "forza", clip: "blocco_c1", n: "Circuito 1 · glutei", items: [b2 ? "G9" : "G1", "G4 x2", "G5 x2", b2 ? "G11 x2" : "G10"] },
         { k: "forza", clip: "blocco_c2", n: "Circuito 2 · cosce e addome", items: ["C1 x2", "C2", "A1", "A4", "A5 x2"] },
-        { k: "allung", clip: "blocco_allung", items: ["Y3 x2", "Y4 x2", "Y7", "Y5 x2", "Y8"] }
+        { k: "allung", clip: "blocco_allung", items: ["Y7", "Y3 x2", "Y4 x2", "Y5 x2", "Y8"] }
       ];
-      if (week === 2 || week === 3) { T[1].items[1] = "G7 x2"; T[2].items[0] = "C4 x2"; }
+      if (week === 2 || week === 3) { T[1].items.splice(1, 2, "G5 x2", "G7 x2"); T[2].items[0] = "C4 x2"; }
       if (week === 3) { T[1].items[0] = "G3 x2"; T[1].items.splice(3, 0, "G6 x2"); }
       if (w.finale) T.splice(3, 0, { k: "finale", clip: "blocco_finale", items: ["G2"], dur: 120 });
     } else {
       T = [
-        { k: "risc", clip: "blocco_risc", items: ["R1", "R6", "R7 x2", "R3", "R5"] },
+        { k: "risc", clip: "blocco_risc", items: ["R5", "R6", "R1", "R7 x2", "R3"] },
         { k: "forza", clip: "blocco_c1", n: "Circuito 1 · braccia e postura", items: b2 ? ["B2", "M4", "M3", "M1", "B6", "M6", "B3"] : ["B1", "M4", "M3", "M1", "M2", "B3", "B4"] },
-        { k: "forza", clip: "blocco_c2", n: "Circuito 2 · addome", items: ["A6", "A3", "A7", "A8", "A2"] },
-        { k: "yoga", clip: "blocco_yoga", items: ["R3", "Y2", "Y1", "Y6 x2", "Y5 x2", "Y8"] }
+        { k: "forza", clip: "blocco_c2", n: "Circuito 2 · addome", items: ["A6", "A7", "A3", "A8", "A2"] },
+        { k: "yoga", clip: "blocco_yoga", items: ["Y1", "Y2", "Y6 x2", "Y5 x2", "Y8"] }
       ];
-      if (week === 2 || week === 3) T[1].items.splice(3, 0, "M5");
+      if (week === 2 || week === 3) T[1].items.splice(4, 0, "M5");
       if (week === 3) T[1].slow = true;
       if (w.finale) T.splice(3, 0, { k: "finale", clip: "blocco_finale", items: ["B7"], dur: 90 });
     }
@@ -109,9 +109,10 @@ const PROGRAM = (() => {
     const stretch = T.find(b => b.k === "allung" || b.k === "yoga");
     // Cursore yoga <-> tonificazione (3 = più tonificazione, valore di partenza)
     const extraYoga = ["Y1", "Y2", "Y6 x2", "R3", "Y7"];
+    const inSess = x => T.some(b => b.items.some(y => y.split(" ")[0] === x.split(" ")[0]));
     if (st.yoga === 4) stretch.items = [...stretch.items.slice(0, 2), "Y8"];
-    if (st.yoga <= 2) { forza[1].giri = 1; stretch.items.splice(-1, 0, ...extraYoga.filter(x => !stretch.items.includes(x)).slice(0, 2)); }
-    if (st.yoga <= 1) { forza[0].giri = 1; stretch.items.splice(-1, 0, ...extraYoga.filter(x => !stretch.items.includes(x))); }
+    if (st.yoga <= 2) { forza[1].giri = 1; stretch.items.splice(-1, 0, ...extraYoga.filter(x => !inSess(x)).slice(0, 2)); }
+    if (st.yoga <= 1) { forza[0].giri = 1; stretch.items.splice(-1, 0, ...extraYoga.filter(x => !inSess(x))); }
     if (st.yoga === 0) { forza[1].items = forza[1].items.slice(0, 2); }
     // Zone su cui insistere: un esercizio in più per zona
     const used = () => T.flatMap(b => b.items.map(x => x.split(" ")[0]));
