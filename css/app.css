@@ -96,6 +96,8 @@ details.fold[open] > summary::after { content: "–"; }
 .session-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .92rem; }
 .preview-list { display: flex; flex-direction: column; gap: 4px; font-size: .92rem; }
 .preview-list .blk { font-weight: 700; margin-top: 8px; }
+.preview-list .pv-ex { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 8px 2px; cursor: pointer; }
+.preview-list .pv-ex:active { background: var(--line); }
 .est { font-family: var(--f-display); font-weight: 800; font-size: 2.2rem; line-height: 1; }
 
 /* Calendario */

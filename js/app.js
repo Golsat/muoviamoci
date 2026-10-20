@@ -106,6 +106,7 @@
         <button class="icon" id="settings" aria-label="Impostazioni">${I.gear}</button></div>
       ${chk ? `<section class="card" style="border-color:var(--accent)"><span class="lbl">${esc(chk.n)} con Claude</span><p>${esc(chk.t)} Apri <b>Progressi</b> e premi «Copia il riepilogo per Claude».</p><div class="row"><button class="btn small primary" data-gotab="progressi">Vai a Progressi</button><button class="btn small ghost" data-seen="${chk.date}">Fatto</button></div></section>` : ""}
       ${hero}
+      ${s ? `<details class="card fold" open><summary>Gli esercizi di questa seduta</summary><p class="muted" style="margin:4px 0 0">Tocca un esercizio per vedere il manichino e ascoltare la spiegazione.</p>${prevList}</details>` : ""}
       <section class="card" aria-label="Regolazioni">
         <h3>Regola la seduta</h3>
         <div><div class="between"><span class="lbl">Yoga</span><span class="lbl">Tonificazione</span></div>
@@ -115,7 +116,6 @@
         <div><span class="lbl">Intensità</span><div class="seg" id="intensity" style="margin-top:6px">${["leggera", "normale", "sfidante"].map(k => `<button data-v="${k}" aria-pressed="${st.intensity === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div></div>
         <div><span class="lbl">Durata massima</span><div class="seg" id="minutes" style="margin-top:6px">${[20, 30, 45].map(k => `<button data-v="${k}" aria-pressed="${st.minutes === k}">${k} min</button>`).join("")}</div></div>
       </section>
-      ${s ? `<details class="card fold"><summary>Esercizi di questa seduta</summary>${prevList}</details>` : ""}
     </main>`;
     if (s) {
       $("#start").onclick = () => startSession(s);
@@ -132,7 +132,7 @@
   }
   function previewList(sess) {
     return `<div class="preview-list">${sess.blocks.map(b => `<div class="blk">${esc(b.n || { risc: "Riscaldamento", allung: "Allungamento", yoga: "Yoga flow", finale: "Finale" }[b.k] || "")}${b.giri > 1 ? ` · ${b.giri} giri` : ""}</div>` +
-      b.items.map(x => { const [id, sx] = x.split(" "); return `<span>${esc(BY[id].n)}${sx ? ' <span class="muted">destra e sinistra</span>' : ""}</span>`; }).join("")).join("")}</div>`;
+      b.items.map(x => { const [id, sx] = x.split(" "); return `<button type="button" class="pv-ex" data-ex="${id}"><span>${esc(BY[id].n)}${sx ? ' <span class="muted">destra e sinistra</span>' : ""}</span><span class="muted" aria-hidden="true">›</span></button>`; }).join("")).join("")}</div>`;
   }
   function reschedule(s) {
     const all = sessions().filter(x => !x.done), weeks = Math.ceil((P.parse(P.today()) - P.parse(s.date)) / 864e5 / 7);
@@ -236,8 +236,8 @@
       <button class="btn" id="addplan">${I.plus} Aggiungi a un mio piano</button>`);
     figs.push(figure($("#exstage", sh), id));
     $("#listen", sh).onclick = () => { VOICE.unlock(); VOICE.stop(); VOICE.say(`ex_${id}_desc.mp3`); VOICE.say(`ex_${id}_guida.mp3`); };
-    $("#exc", sh).onclick = ev => { toggle(S.excluded, id); ev.currentTarget.setAttribute("aria-pressed", S.excluded.includes(id)); save(); toast(S.excluded.includes(id) ? "Escluso: verrà sostituito nelle sedute" : "Di nuovo nelle sedute"); };
-    $("#kn", sh).onclick = ev => { toggle(S.knee, id); ev.currentTarget.setAttribute("aria-pressed", S.knee.includes(id)); save(); toast(S.knee.includes(id) ? "Segnato: verrà sostituito con un'alternativa senza carico" : "Segnalazione tolta"); };
+    $("#exc", sh).onclick = ev => { toggle(S.excluded, id); ev.currentTarget.setAttribute("aria-pressed", S.excluded.includes(id)); save(); toast(S.excluded.includes(id) ? "Escluso: verrà sostituito nelle sedute" : "Di nuovo nelle sedute"); if (tab === "oggi") renderOggi(); };
+    $("#kn", sh).onclick = ev => { toggle(S.knee, id); ev.currentTarget.setAttribute("aria-pressed", S.knee.includes(id)); save(); toast(S.knee.includes(id) ? "Segnato: verrà sostituito con un'alternativa senza carico" : "Segnalazione tolta"); if (tab === "oggi") renderOggi(); };
     $("#addplan", sh).onclick = () => { closeSheet(); pickPlanFor(id); };
   }
   const toggle = (arr, v) => { const i = arr.indexOf(v); if (i >= 0) arr.splice(i, 1); else arr.push(v); };
@@ -562,6 +562,9 @@
     enter(0);
     timer = setInterval(tick, 200);
   }
+
+  // Elenco esercizi di una seduta: tocco → scheda dell'esercizio
+  document.addEventListener("click", e => { const b = e.target.closest(".pv-ex"); if (b) openEx(b.dataset.ex); });
 
   // ---------- Avvio ----------
   renderTabs(); render();

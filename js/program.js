@@ -1,22 +1,22 @@
 // Programma: calendario delle sedute, schemi A/B per blocco e settimana, regolazioni.
 const PROGRAM = (() => {
-  const START = "2026-10-27"; // primo martedì
+  const START = "2026-10-20"; // primo martedì (anticipato al 20/10 su richiesta)
   const UNTIL = "2027-06-30"; // il calendario prosegue da solo fino a qui
   const MOVED = { "2026-12-24": "2026-12-23", "2026-12-31": "2026-12-30" };
   const NOTES = {
-    "2026-10-27": "Prima seduta: guida voce completa",
-    "2026-10-29": "Prima volta con i manubri: cura della forma",
-    "2026-11-05": "Controllo 1 dei pollici con Claude",
-    "2026-11-19": "Controllo 2: fine blocco 1",
+    "2026-10-20": "Prima seduta: guida voce completa",
+    "2026-10-22": "Prima volta con i manubri: cura della forma",
+    "2026-10-29": "Controllo 1 dei pollici con Claude",
+    "2026-11-12": "Controllo 2: fine blocco 1",
     "2026-12-08": "Immacolata: se serve, spostala",
-    "2026-12-17": "Controllo 3: fine blocco 2",
+    "2026-12-10": "Controllo 3: fine blocco 2",
     "2026-12-23": "Anticipata da giovedì 24 (Vigilia)",
     "2026-12-30": "Anticipata da giovedì 31"
   };
   const CHECKS = [
-    { date: "2026-11-05", n: "Controllo 1", t: "Dopo 4 sedute: prima lettura dei pollici e dei testi della voce." },
-    { date: "2026-11-19", n: "Controllo 2", t: "Fine blocco 1: si decidono esercizi e carichi del blocco 2." },
-    { date: "2026-12-17", n: "Controllo 3", t: "Fine blocco 2: si prepara il programma di gennaio." }
+    { date: "2026-10-29", n: "Controllo 1", t: "Dopo 4 sedute: prima lettura dei pollici e dei testi della voce." },
+    { date: "2026-11-12", n: "Controllo 2", t: "Fine blocco 1: si decidono esercizi e carichi del blocco 2." },
+    { date: "2026-12-10", n: "Controllo 3", t: "Fine blocco 2: si prepara il programma di gennaio." }
   ];
   const WEEK = {
     1: { n: "Tecnica", work: 40, rest: 20, giri: 2, finale: false },
