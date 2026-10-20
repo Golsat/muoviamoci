@@ -3,7 +3,7 @@
   const P = PROGRAM;
   const KEY = "muoviamoci-v1";
   const DEF = {
-    settings: { yoga: 3, focus: [], intensity: "normale", minutes: 45, guide: "completa", volume: 1, reminder: "17:30", restExtra: 0 },
+    settings: { yoga: 3, focus: [], intensity: "normale", minutes: 45, guide: "completa", volume: 1, reminder: "17:30", restExtra: 0, music: true, musicVol: 0.35 },
     excluded: [], knee: [], tweak: {}, restBonus: {}, restUse: {}, done: {}, moves: {}, skipped: {}, offlineReady: false, votes: [], plans: [], history: [], checksSeen: [],
     name: "", welcomed: false, look: {}, prog: { A: 0, B: 0 }, progMark: { A: -1, B: -1 }, tests: [], testSnooze: "", cards: [], mirror: null
   };
@@ -365,7 +365,8 @@
       </section>
       <section class="card"><h3>Sedute fatte</h3>${S.history.length ? `<div class="list">${S.history.slice().reverse().map(h => `<div class="between"><span>${esc(P.fmt(h.date))} · ${esc(h.title)}</span><span class="muted num">${h.min} min · ${esc(h.rating || "")}</span></div>`).join("")}</div>` : '<p class="muted">Ancora nessuna.</p>'}</section>
       <section class="card"><h3>App</h3><p class="muted">Versione: <b id="ver">…</b></p><p class="muted" id="updmsg" hidden></p>
-        <div class="row"><button class="btn small" id="chkupd">Controlla aggiornamenti</button></div></section>
+        <div class="row"><button class="btn small" id="chkupd">Controlla aggiornamenti</button></div>
+        <p class="muted" style="font-size:.8rem;margin:0">Musica: «Life of Riley», «Kawai Kitsune», «Ishikari Lore», «Meditation Impromptu 02» di Kevin MacLeod (incompetech.com), licenza Creative Commons BY 4.0.</p></section>
       <section class="card"><h3>Copia di sicurezza</h3><p class="muted">Salva i tuoi dati in un file, per non perderli se cambi telefono.</p>
         <div class="row"><button class="btn small" id="exp">Salva copia</button><label class="btn small ghost" for="imp">Ripristina</label><input type="file" id="imp" accept="application/json,.json" hidden></div></section>
     </main>`;
@@ -561,6 +562,9 @@
       <div><span class="lbl">Guida della voce</span><div class="seg" id="guide" style="margin-top:6px">${[["completa", "Completa"], ["essenziale", "Essenziale"], ["tempo", "Solo tempo"]].map(([k, n]) => `<button data-v="${k}" aria-pressed="${st.guide === k}">${n}</button>`).join("")}</div>
         <p class="muted" style="margin-top:6px">Completa: posizione, respiro e consigli. Essenziale: respiro e conto alla rovescia. Solo tempo: solo il conto, con un bip.</p></div>
       <div><label class="lbl" for="vol">Volume della voce</label><input type="range" id="vol" min="0.2" max="1" step="0.1" value="${st.volume}"></div>
+      <div><span class="lbl">Musica di sottofondo</span><div class="seg" id="mus" style="margin-top:6px"><button data-v="1" aria-pressed="${st.music !== false}">Accesa</button><button data-v="0" aria-pressed="${st.music === false}">Spenta</button></div>
+        <label class="lbl" for="mvol" style="display:block;margin-top:8px">Volume della musica</label><input type="range" id="mvol" min="0.1" max="0.8" step="0.05" value="${st.musicVol ?? 0.35}">
+        <span class="muted" style="font-size:.85rem">Ritmata per riscaldamento e circuiti, calma per yoga e allungamento. Si abbassa da sola quando parla Isabella.</span></div>
       <button class="btn" id="tryv">${I.sound} Prova la voce</button>
       <p class="muted">Puoi ascoltare la tua musica da un'altra app: la voce di Isabella si sente sopra, senza fermarla.</p>
       <p class="muted">Figure: ${has3D ? "manichino 3D" : "disegno 2D (questo telefono non supporta il 3D)"}.</p>`);
@@ -570,6 +574,8 @@
     $("#mirror", sh).onclick = e => { const b = e.target.closest("button"); if (!b) return; S.mirror = b.dataset.v === "1"; save(); sh.querySelectorAll("#mirror button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
     $("#guide", sh).onclick = e => { const b = e.target.closest("button"); if (!b) return; st.guide = b.dataset.v; save(); sh.querySelectorAll("#guide button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
     $("#vol", sh).oninput = e => { st.volume = +e.target.value; VOICE.setVolume(st.volume); save(); };
+    $("#mus", sh).onclick = e => { const b = e.target.closest("button"); if (!b) return; st.music = b.dataset.v === "1"; $("#mus", sh).querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); save(); };
+    $("#mvol", sh).oninput = e => { st.musicVol = +e.target.value; VOICE.setMusicVol(st.musicVol); save(); };
     $("#tryv", sh).onclick = () => { VOICE.unlock(); VOICE.setVolume(st.volume); VOICE.say("g_prova.mp3"); };
   }
 
@@ -602,6 +608,7 @@
 
   function runPlayer(sess, meta) {
     VOICE.unlock(); VOICE.setVolume(S.settings.volume);
+    VOICE.setMusicVol(S.settings.musicVol ?? 0.35); VOICE.setMusicOn(S.settings.music !== false);
     const steps = P.steps(sess), guide = S.settings.guide;
     let total = P.totalSec(steps);
     // Le presentazioni (benvenuto, inizio blocco) durano quanto la frase di Isabella: prima il conto
@@ -616,6 +623,7 @@
     });
     const el = document.createElement("div"); el.className = "player is-intro"; el.setAttribute("role", "region"); el.setAttribute("aria-label", "Seduta in corso");
     el.innerHTML = `<div class="p-top"><button class="icon" id="pclose" aria-label="Esci dalla seduta">${I.x}</button>
+        <button class="icon p-mus" id="pmus" aria-label="Musica di sottofondo" aria-pressed="${S.settings.music !== false}">♪</button>
         <div class="grow"><div class="between"><b id="pblock"></b><span class="muted num" id="pleft"></span></div><div class="p-prog"><i id="pbar"></i></div></div></div>
       <div class="p-stage" id="pstage"><span class="p-phase" id="pphase"></span><span class="p-side" id="pside" hidden></span></div>
       <div class="p-info"><div class="grow"><div class="lbl" id="pnextlbl"></div><div class="p-name" id="pname"></div><div class="muted" id="pnext"></div></div>
@@ -695,6 +703,7 @@
       idx = i; t = 0; fired = new Set(); VOICE.stop();
       const st = steps[i];
       cues = buildCues(st);
+      VOICE.music(["allung", "yoga"].includes(st.block.k) ? "yoga" : "mov");
       el.className = "player is-" + st.kind;
       q("pblock").textContent = st.label || st.block.n || { risc: "Riscaldamento", allung: "Allungamento", yoga: "Yoga flow", finale: "Finale", forza: "Circuito" }[st.block.k];
       const nw = st.kind === "work" ? st : nextWork(i);
@@ -754,7 +763,7 @@
     function finish() {
       if (finished) return;
       finished = true;
-      clearInterval(timer); VOICE.stop(); say("g_fine.mp3");
+      clearInterval(timer); VOICE.stop(); VOICE.music(null); say("g_fine.mp3");
       if (fig && fig.stop) fig.stop();
       try { if (lock) lock.release(); } catch (e) { }
       try { MIRROR.close(); } catch (e) { }
@@ -788,7 +797,7 @@
     function close() {
       playerBack = null;
       try { MIRROR.close(); } catch (e) { }
-      clearInterval(timer); VOICE.stop(); VOICE.onText(null);
+      clearInterval(timer); VOICE.stop(); VOICE.music(null); VOICE.onText(null);
       if (fig && fig.stop) fig.stop();
       document.removeEventListener("visibilitychange", onVis);
       try { if (lock) lock.release(); } catch (e) { }
@@ -800,6 +809,7 @@
       if (paused) { VOICE.pauseAll(); if (fig) fig.paused = true; } else { VOICE.resumeAll(); if (fig) fig.paused = false; }
     };
     q("pnextb").onclick = () => enter(idx + 1);
+    q("pmus").onclick = () => { S.settings.music = S.settings.music === false; save(); VOICE.setMusicOn(S.settings.music); q("pmus").setAttribute("aria-pressed", S.settings.music); toast(S.settings.music ? "Musica accesa" : "Musica spenta"); };
     // «+15 s»: più tempo per prepararsi a questo esercizio. Usato in 2 sedute diverse → la volta dopo il recupero è già più lungo (max +30")
     q("pmore").onclick = () => {
       const st = steps[idx]; if (!st || st.kind !== "rest") return;
