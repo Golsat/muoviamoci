@@ -178,14 +178,14 @@ const FIG3D = (() => {
     return J;
   }
 
-  function chair(M, scene, x, y, z, dir) {
-    // Sedia con il sedile alla quota y; dir: verso in cui si allunga il sedile (+1 / -1 su Z)
+  function chair(M, scene, x, y, z, dir, backH = 0.42) {
+    // Sedia con il sedile alla quota y; dir: verso in cui si allunga il sedile (+1 / -1 su Z); backH: altezza schienale
     const g = new THREE.Group(), w = 0.42, d = 0.42;
     const seat = new THREE.Mesh(new THREE.BoxGeometry(w, 0.035, d), M.wood); seat.position.set(0, y - 0.018, dir * d / 2); g.add(seat);
     for (const [lx, lz] of [[-1, 0.03], [1, 0.03], [-1, d - 0.03], [1, d - 0.03]]) {
       const l = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, y, 8), M.wood); l.position.set(lx * (w / 2 - 0.03), y / 2, dir * lz); g.add(l);
     }
-    const back = new THREE.Mesh(new THREE.BoxGeometry(w, 0.42, 0.03), M.wood); back.position.set(0, y + 0.21, dir * (d - 0.015)); g.add(back);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(w, backH, 0.03), M.wood); back.position.set(0, y + backH / 2, dir * (d - 0.015)); g.add(back);
     g.position.set(x, 0, z); g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     scene.add(g);
   }
@@ -257,7 +257,8 @@ const FIG3D = (() => {
         const z = tmp.z + (p.dx || 0) * U, y = tmp.y + (p.dy || 0) * U;
         if (p.type === "chair") chair(M, scene, tmp.x, Math.max(0.3, y), z, -1);
         if (p.type === "wall") { const w = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.9, 0.05), M.wood); w.position.set(tmp.x, 0.95, z + 0.05); w.receiveShadow = true; scene.add(w); }
-        if (p.type === "chairSide") chair(M, scene, tmp.x - 0.05, 0.46, tmp.z - 0.2, 1);
+        // Schienale proprio sotto la mano (seduta davanti, lontano dal corpo), alto fino al palmo
+        if (p.type === "chairSide") chair(M, scene, tmp.x - 0.05, 0.46, tmp.z + 0.43, -1, Math.min(0.6, Math.max(0.3, tmp.y - 0.083 - 0.46)));
         continue;
       }
       if (p.type === "cushion") movers.push({ p, m: ball(scene, 1, M.cush, null, [0.08, 0.06, 0.07]) });
