@@ -65,19 +65,19 @@ const PROGRAM = (() => {
     let T;
     if (type === "A") {
       T = [
-        { k: "risc", clip: "blocco_risc", items: ["R5", "R8", "R1", "R2", "R4"] },
+        { k: "risc", clip: "blocco_risc", items: ["R5", "R8", "E1 x2", "R1", "R2", "R4"] },
         { k: "forza", clip: "blocco_c1", n: "Circuito 1 · glutei", items: [b2 ? "G9" : "G1", "G4 x2", "G5 x2", b2 ? "G11 x2" : "G10"] },
-        { k: "forza", clip: "blocco_c2", n: "Circuito 2 · cosce e addome", items: ["C5", "C1 x2", "C2", "A1", "A5 x2"] },
+        { k: "forza", clip: "blocco_c2", n: "Circuito 2 · cosce e addome", items: ["C5", "E2", "C1 x2", "C2", "A1", "A5 x2"] },
         { k: "allung", clip: "blocco_allung", items: ["Y7", "Y3 x2", "Y4 x2", "Y5 x2", "Y8"] }
       ];
-      if (week === 2 || week === 3) { T[1].items.splice(1, 2, "G5 x2", "G7 x2"); T[2].items[1] = "C4 x2"; }
+      if (week === 2 || week === 3) { T[1].items.splice(1, 2, "G5 x2", "G7 x2"); T[2].items[2] = "C4 x2"; }
       if (week === 3) { T[1].items[0] = "G3 x2"; T[1].items.splice(3, 0, "G6 x2"); }
       if (w.finale) T.splice(3, 0, { k: "finale", clip: "blocco_finale", items: ["G2"], dur: 120 });
     } else {
       T = [
-        { k: "risc", clip: "blocco_risc", items: ["R5", "R6", "R1", "R7 x2", "R3"] },
+        { k: "risc", clip: "blocco_risc", items: ["R5", "E3", "R6", "R1", "R7 x2", "R3"] },
         { k: "forza", clip: "blocco_c1", n: "Circuito 1 · braccia e postura", items: b2 ? ["B2", "M4", "M3", "M1", "B6", "M6", "B3"] : ["B1", "M4", "M3", "M1", "M2", "B3", "B4"] },
-        { k: "forza", clip: "blocco_c2", n: "Circuito 2 · addome", items: ["A6", "A7", "A3", "A8", "A2"] },
+        { k: "forza", clip: "blocco_c2", n: "Circuito 2 · addome", items: ["A6", "A7", "A3", "A8", "A2", "E4"] },
         { k: "yoga", clip: "blocco_yoga", items: ["Y1", "Y2", "Y6 x2", "Y5 x2", "Y8"] }
       ];
       if (week === 2 || week === 3) T[1].items.splice(4, 0, "M5");
@@ -102,7 +102,7 @@ const PROGRAM = (() => {
   function build(s, st) {
     const w = WEEK[s.week];
     let T = template(s.type, s.block, s.week).map(b => ({ ...b, items: [...b.items] }));
-    let work = w.work, rest = w.rest, giri = w.giri;
+    let work = w.work + ((st.prog && st.prog[s.type]) || 0), rest = w.rest, giri = w.giri;
     if (st.intensity === "leggera") { work -= 10; rest += 10; T = T.filter(b => b.k !== "finale"); }
     if (st.intensity === "sfidante") { work += 5; rest = Math.max(10, rest - 5); if (!T.some(b => b.k === "finale")) T.splice(T.length - 1, 0, { k: "finale", clip: "blocco_finale", items: [s.type === "A" ? "G2" : "B7"], dur: 60 }); }
     const forza = T.filter(b => b.k === "forza");
@@ -156,7 +156,7 @@ const PROGRAM = (() => {
           const rest = timed[b.k] ? 8 : (n === 0 ? 12 : sess.rest);
           const sides = sx ? ["dx", "sx"] : [null];
           sides.forEach((side, k) => {
-            out.push({ kind: "rest", block: b, ex: e, side, dur: k ? 6 : rest, first: k === 0, giro: g, slow: b.slow });
+            out.push({ kind: "rest", block: b, ex: e, side, dur: k ? 6 : rest, first: k === 0, giro: g, slow: b.slow, n });
             out.push({ kind: "work", block: b, ex: e, side, dur: sx && timed[b.k] ? Math.round(work * 0.75) : work, giro: g, slow: b.slow, calm: !!timed[b.k], last: k === sides.length - 1 });
           });
         });

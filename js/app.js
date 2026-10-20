@@ -4,17 +4,19 @@
   const KEY = "muoviamoci-v1";
   const DEF = {
     settings: { yoga: 3, focus: [], intensity: "normale", minutes: 45, guide: "completa", volume: 1, reminder: "17:30" },
-    excluded: [], knee: [], tweak: {}, done: {}, moves: {}, votes: [], plans: [], history: [], checksSeen: []
+    excluded: [], knee: [], tweak: {}, done: {}, moves: {}, votes: [], plans: [], history: [], checksSeen: [],
+    name: "", welcomed: false, look: {}, prog: { A: 0, B: 0 }, progMark: { A: -1, B: -1 }, tests: [], testSnooze: "", cards: [], mirror: null
   };
   let S;
   try { S = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || "{}") }; S.settings = { ...DEF.settings, ...S.settings }; } catch (e) { S = structuredClone(DEF); }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
+  window.FIG_LOOK = S.look;
 
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const app = $("#app");
   const mins = sec => Math.round(sec / 60);
-  const ZN = { risc: "Riscaldamento", glu: "Glutei", cos: "Cosce", add: "Addome", bra: "Braccia e schiena", yoga: "Yoga" };
+  const ZN = { risc: "Riscaldamento", glu: "Glutei", cos: "Cosce", add: "Addome", bra: "Braccia e schiena", yoga: "Yoga", eq: "Equilibrio e ossa" };
   const FOCUS = [["glu", "Glutei"], ["add", "Addome"], ["bra", "Braccia"], ["cos", "Cosce"]];
   const REASONS = [["difficile", "Troppo difficile"], ["facile", "Troppo facile"], ["ginocchio", "Fastidio al ginocchio"], ["nonpiace", "Non mi piace / poco chiaro"]];
 
@@ -61,7 +63,7 @@
     const all = sessions();
     return all.find(s => !s.done) || null;
   }
-  function stFor() { return { ...S.settings, excluded: S.excluded, knee: S.knee, tweak: S.tweak }; }
+  function stFor() { return { ...S.settings, excluded: S.excluded, knee: S.knee, tweak: S.tweak, prog: S.prog }; }
   const sessTitle = s => s.type === "P" ? s.name : `Seduta ${s.type} · ${P.TITLE[s.type]}`;
   const weekLabel = s => s.week === "F" ? "Settimana delle feste" : `Settimana ${s.week} · ${P.WEEK[s.week].n}`;
 
@@ -82,6 +84,7 @@
   }
 
   // ---------- OGGI ----------
+  let regOpen = false;
   function renderOggi() {
     const s = nextSession(), t = P.today(), st = S.settings;
     const d = new Date(), hello = d.getHours() < 13 ? "Buongiorno" : d.getHours() < 18 ? "Buon pomeriggio" : "Buonasera";
@@ -93,35 +96,44 @@
         <div class="between"><span class="lbl">${when} · ${esc(P.fmt(s.date, true))}</span><span class="pill ${s.type.toLowerCase()}">${s.type}</span></div>
         <h2>${esc(P.TITLE[s.type])}</h2>
         <div class="session-meta"><span>${esc(P.blockName(s.block))}</span><span>${esc(weekLabel(s))}</span>${s.note ? `<span>${esc(s.note)}</span>` : ""}</div>
-        <div class="between"><div><div class="est num">${mins(P.totalSec(steps))}<small style="font-size:1rem"> min</small></div><span class="muted">${new Set(steps.filter(x => x.kind === "work").map(x => x.ex.id)).size} esercizi · ${sess.work}" lavoro / ${sess.rest}" recupero</span></div></div>
+        <div class="between"><div><div class="est num">${mins(P.totalSec(steps))}<small style="font-size:1rem"> min</small></div><span class="muted">${new Set(steps.filter(x => x.kind === "work").map(x => x.ex.id)).size} esercizi · ${sess.work}" lavoro / ${sess.rest}" recupero${S.prog[s.type] > 0 ? ` · +${S.prog[s.type]}" per i tuoi progressi` : ""}</span></div></div>
         <button class="btn primary big" id="start">${I.play} Inizia</button>
         ${late ? `<button class="btn ghost" id="reschedule" style="color:inherit;border-color:currentColor">Riprogramma da oggi</button>` : ""}
       </section>`;
     } else hero = `<section class="card hero"><h2>Programma completato</h2><p>Bravissima! Chiedi a Claude il programma dei prossimi mesi.</p></section>`;
 
     const chk = P.CHECKS.find(c => c.date <= t && !S.checksSeen.includes(c.date));
+    const km = tripKm(), next = VIAGGIO.STOPS.find(x => x.km > km);
+    const tripCard = `<button class="card trip-card" id="trip" aria-label="Il tuo viaggio sul Tōkaidō"><div class="between"><span class="lbl">Il tuo viaggio · 東海道</span><span class="muted num">${km} / ${VIAGGIO.TOT} km</span></div>${VIAGGIO.map(km)}<span class="muted">${next ? `Prossima cartolina: <b>${esc(next.n)}</b> fra ${next.km - km} km (circa ${Math.ceil((next.km - km) / VIAGGIO.KM_MIN)} minuti di allenamento)` : "Sei arrivata a Kyoto! Tocca per rivedere le cartoline."}</span></button>`;
+    const testDue = testIsDue() && S.testSnooze !== t;
+    const stSum = `${st.intensity[0].toUpperCase() + st.intensity.slice(1)} · ${st.minutes} min · ${["solo yoga", "più yoga", "metà e metà", "più forza", "solo forza"][st.yoga]}${st.focus.length ? " · " + st.focus.map(k => FOCUS.find(f => f[0] === k)[1]).join(", ") : ""}`;
     const prevList = s ? previewList(P.build(s, stFor())) : "";
     app.innerHTML = `<main class="screen">
-      <div class="top"><div><div class="brand">Muoviamoci!</div><span class="muted">${hello}! ${esc(P.fmt(t, true))}</span></div>
+      <div class="top"><div><div class="brand">Muoviamoci!</div><span class="muted">${hello}${S.name ? ", " + esc(S.name) : ""}! ${esc(P.fmt(t, true))}</span></div>
         <button class="icon" id="settings" aria-label="Impostazioni">${I.gear}</button></div>
       ${chk ? `<section class="card" style="border-color:var(--accent)"><span class="lbl">${esc(chk.n)} con Claude</span><p>${esc(chk.t)} Apri <b>Progressi</b> e premi «Copia il riepilogo per Claude».</p><div class="row"><button class="btn small primary" data-gotab="progressi">Vai a Progressi</button><button class="btn small ghost" data-seen="${chk.date}">Fatto</button></div></section>` : ""}
+      ${testDue ? `<section class="card" style="border-color:var(--accent)"><span class="lbl">${S.tests.length ? "Mini-test di fine blocco" : "Mini-test di partenza"}</span><p>${S.tests.length ? "Rifai le 3 prove: vedrai quanto sei migliorata." : "3 prove semplici, 5 minuti: servono a vedere i tuoi progressi nelle prossime settimane."}</p><div class="row"><button class="btn small primary" id="dotest">Fai il mini-test</button><button class="btn small ghost" id="snooze">Più tardi</button></div></section>` : ""}
       ${hero}
       ${s ? `<details class="card fold" open><summary>Gli esercizi di questa seduta</summary><p class="muted" style="margin:4px 0 0">Tocca un esercizio per vedere il manichino e ascoltare la spiegazione.</p>${prevList}</details>` : ""}
-      <section class="card" aria-label="Regolazioni">
-        <h3>Regola la seduta</h3>
+      <details class="card fold" id="regbox" aria-label="Regolazioni" ${regOpen ? "open" : ""}>
+        <summary><span>Regola la seduta<br><span class="muted" style="font-weight:500;font-size:.88rem">${esc(stSum)}</span></span></summary>
         <div><div class="between"><span class="lbl">Yoga</span><span class="lbl">Tonificazione</span></div>
           <input type="range" id="yoga" min="0" max="4" step="1" value="${st.yoga}" aria-label="Equilibrio tra yoga e tonificazione">
           <div class="range-labels"><span>Più yoga</span><span>Metà e metà</span><span>Più forza</span></div></div>
         <div><span class="lbl">Insisti su</span><div class="chips" id="focus" style="margin-top:6px">${FOCUS.map(([k, n]) => `<button class="chip" data-f="${k}" aria-pressed="${st.focus.includes(k)}">${n}</button>`).join("")}</div></div>
         <div><span class="lbl">Intensità</span><div class="seg" id="intensity" style="margin-top:6px">${["leggera", "normale", "sfidante"].map(k => `<button data-v="${k}" aria-pressed="${st.intensity === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div></div>
         <div><span class="lbl">Durata massima</span><div class="seg" id="minutes" style="margin-top:6px">${[20, 30, 45].map(k => `<button data-v="${k}" aria-pressed="${st.minutes === k}">${k} min</button>`).join("")}</div></div>
-      </section>
+      </details>
+      ${tripCard}
     </main>`;
     if (s) {
       $("#start").onclick = () => startSession(s);
       const rs = $("#reschedule"); if (rs) rs.onclick = () => reschedule(s);
     }
     $("#settings").onclick = openSettings;
+    $("#regbox").ontoggle = e => { regOpen = e.target.open; };
+    $("#trip").onclick = openTrip;
+    if (testDue) { $("#dotest").onclick = openTests; $("#snooze").onclick = () => { S.testSnooze = t; save(); renderOggi(); }; }
     $("#yoga").oninput = e => { st.yoga = +e.target.value; save(); };
     $("#yoga").onchange = () => renderOggi();
     $("#focus").onclick = e => { const b = e.target.closest("button"); if (!b) return; const k = b.dataset.f; st.focus = st.focus.includes(k) ? st.focus.filter(x => x !== k) : [...st.focus, k]; save(); renderOggi(); };
@@ -314,7 +326,9 @@
       <section class="card"><div class="row" style="gap:28px">
         <div><div class="est num">${done}</div><span class="muted">sedute fatte</span></div>
         <div><div class="est num">${minTot}</div><span class="muted">minuti in tutto</span></div>
-        <div><div class="est num">${S.votes.length}</div><span class="muted">pollici dati</span></div></div></section>
+        <div><div class="est num">${weekStreak()}</div><span class="muted">settimane complete di fila</span></div></div></section>
+      <button class="card trip-card" id="trip2"><div class="between"><span class="lbl">Il tuo viaggio · 東海道</span><span class="muted num">${tripKm()} / ${VIAGGIO.TOT} km</span></div>${VIAGGIO.map(tripKm())}<span class="muted">Tocca per vedere le cartoline (${S.cards.length} di ${VIAGGIO.STOPS.length}).</span></button>
+      <section class="card"><h3>Mini-test</h3>${testsTable()}</section>
       ${proposals.length ? `<section class="card" style="border-color:var(--warn)"><h3>Da sostituire?</h3>${proposals.map(([id]) => `<div class="between"><span>«${esc(BY[id].n)}» non ti piace (3 volte)</span><button class="btn small" data-repl="${id}">Sostituisci</button></div>`).join("")}</section>` : ""}
       <section class="card"><h3>Controlli con Claude</h3>
         ${P.CHECKS.map(c => `<div class="between"><span><b>${esc(P.fmt(c.date))}</b> · ${esc(c.t)}</span></div>`).join("")}
@@ -326,8 +340,10 @@
       </section>
       <section class="card"><h3>Sedute fatte</h3>${S.history.length ? `<div class="list">${S.history.slice().reverse().map(h => `<div class="between"><span>${esc(P.fmt(h.date))} · ${esc(h.title)}</span><span class="muted num">${h.min} min · ${esc(h.rating || "")}</span></div>`).join("")}</div>` : '<p class="muted">Ancora nessuna.</p>'}</section>
       <section class="card"><h3>Copia di sicurezza</h3><p class="muted">Salva i tuoi dati in un file, per non perderli se cambi telefono.</p>
-        <div class="row"><button class="btn small" id="exp">Salva copia</button><label class="btn small ghost" for="imp">Ripristina</label><input type="file" id="imp" accept="application/json" hidden></div></section>
+        <div class="row"><button class="btn small" id="exp">Salva copia</button><label class="btn small ghost" for="imp">Ripristina</label><input type="file" id="imp" accept="application/json,.json" hidden></div></section>
     </main>`;
+    $("#trip2").onclick = openTrip;
+    $("#retest").onclick = openTests;
     $("#copy").onclick = () => {
       const txt = summaryText(), out = $("#out"); out.value = txt;
       const fb = () => { out.hidden = false; out.focus(); out.select(); toast("Seleziona il testo e copialo"); };
@@ -338,7 +354,7 @@
     $("#exp").onclick = () => saveFile(`muoviamoci-copia-${P.today()}.json`, JSON.stringify(S, null, 1), "application/json");
     $("#imp").onchange = e => {
       const f = e.target.files[0]; if (!f) return;
-      f.text().then(t => { const d = JSON.parse(t); if (!d.settings) throw new Error(); S = { ...DEF, ...d }; save(); toast("Dati ripristinati"); go("oggi"); }).catch(() => toast("Il file non è una copia di Muoviamoci!"));
+      f.text().then(t => { const d = JSON.parse(t); if (!d.settings) throw new Error(); if (!confirm("Sostituire i dati di questo telefono con quelli della copia?")) return; S = { ...DEF, ...d }; S.settings = { ...DEF.settings, ...d.settings }; save(); window.FIG_LOOK = S.look; toast("Dati ripristinati"); go("oggi"); }).catch(() => toast("Il file non è una copia di Muoviamoci!"));
     };
   }
   function summaryText() {
@@ -346,6 +362,10 @@
     L.push(`Sedute fatte: ${S.history.length}`);
     S.history.forEach(h => L.push(`- ${h.date} ${h.title}: ${h.min} min, giudizio: ${h.rating || "-"}`));
     L.push("", "Regolazioni: " + JSON.stringify(S.settings));
+    L.push(`Progressione automatica: A ${S.prog.A >= 0 ? "+" : ""}${S.prog.A}", B ${S.prog.B >= 0 ? "+" : ""}${S.prog.B}" di lavoro · settimane complete di fila: ${weekStreak()} · viaggio: ${tripKm()} km`);
+    L.push("", "MINI-TEST (sedia = alzate in 30\", plank e equilibrio = secondi)");
+    S.tests.forEach(r => L.push(`- ${r.date}: sedia ${r.sedia ?? "-"}, plank ${r.plank ?? "-"}, equilibrio ${r.equi ?? "-"}`));
+    if (!S.tests.length) L.push("- nessuno");
     L.push("", "POLLICI PER ESERCIZIO");
     Object.entries(vs).forEach(([id, x]) => L.push(`${id} ${BY[id].n}: ${x.up} su, ${x.down} giù${Object.keys(x.r).length ? " (" + Object.entries(x.r).map(([k, n]) => `${k} ×${n}`).join(", ") + ")" : ""}`));
     L.push("", "Fastidio al ginocchio: " + (S.knee.join(", ") || "nessuno"));
@@ -363,28 +383,174 @@
     if ((x.r.facile || 0) >= 2 && !(S.tweak[id] > 0)) { S.tweak[id] = 10; toast("Dalla prossima volta: 10 secondi in più"); }
   }
 
+  // ---------- VIAGGIO SUL TŌKAIDŌ ----------
+  const totalMin = () => S.history.reduce((a, h) => a + (h.min || 0), 0);
+  const tripKm = () => VIAGGIO.kmOf(totalMin());
+  // Cartoline appena raggiunte e non ancora viste
+  function newCards() {
+    const got = VIAGGIO.reached(tripKm()).map(x => VIAGGIO.STOPS.indexOf(x));
+    const fresh = got.filter(i => !S.cards.includes(i));
+    S.cards = got; save();
+    return fresh;
+  }
+  function openTrip() {
+    const km = tripKm();
+    const sh = sheet(`<div class="between"><h2>Il viaggio sul Tōkaidō</h2><span class="pill">東海道</span></div>
+      <p class="muted">Ogni minuto di allenamento è strada: da Tokyo a Kyoto lungo l'antica «strada del mare orientale», 492 km. Hai fatto <b>${km} km</b>.</p>
+      ${VIAGGIO.map(km)}
+      <div class="pc-list">${VIAGGIO.STOPS.map((x, i) => x.km <= km ? `<figure class="pc-fig">${VIAGGIO.card(i)}<figcaption><b>${esc(x.n)}</b> · km ${x.km}<br>${esc(x.t)}</figcaption></figure>` : `<figure class="pc-fig">${VIAGGIO.card(i, true)}</figure>`).join("")}</div>`);
+    sh.classList.add("washi");
+  }
+
+  // ---------- MINI-TEST ----------
+  const TESTS = [
+    { k: "sedia", n: "Alzate dalla sedia in 30 secondi", u: "volte", dur: 30, mode: "down", d: "Seduta a metà della sedia, braccia incrociate sul petto. Al via alzati in piedi del tutto e risiediti, più volte che puoi in 30 secondi, con calma e bene. Conta tu le alzate." },
+    { k: "plank", n: "Plank dalle ginocchia", u: "secondi", dur: 60, mode: "up", d: "Sugli avambracci, ginocchia a terra sull'asciugamano, corpo in linea. Tieni finché la posizione è buona, al massimo 60 secondi: ferma il tempo quando cedi." },
+    { k: "equi", n: "Equilibrio su una gamba", u: "secondi", dur: 60, mode: "up", d: "Vicino alla sedia ma senza appoggiarti, solleva un piede. Ferma il tempo quando appoggi il piede o la mano. Massimo 60 secondi: fai il lato più difficile." }
+  ];
+  // Dovuto: la prima volta, poi dopo ogni controllo di fine blocco
+  function testIsDue() {
+    if (!S.tests.length) return true;
+    const last = S.tests[S.tests.length - 1].date, t = P.today();
+    return P.CHECKS.slice(1).some(c => c.date <= t && last < c.date);
+  }
+  function openTests() {
+    const vals = {};
+    const sh = sheet(`<h2>Mini-test</h2><p class="muted">Tre prove semplici. Per ognuna: leggi, premi <b>Avvia</b>, poi scrivi il risultato. Si rifanno a fine di ogni blocco per vedere i progressi.</p>
+      ${TESTS.map(x => `<section class="card" data-t="${x.k}"><h3>${esc(x.n)}</h3><p>${esc(x.d)}</p>
+        <div class="between"><button class="btn small primary" data-go="${x.k}">Avvia</button><span class="est num" data-clock="${x.k}">${x.mode === "down" ? x.dur : 0}</span></div>
+        <label class="row"><span class="lbl">Risultato (${x.u})</span><input type="number" inputmode="numeric" min="0" max="200" data-v="${x.k}" class="num-in"></label></section>`).join("")}
+      <button class="btn primary big" id="tsave">Salva i risultati</button>`);
+    let run = null;
+    const stop = () => { if (run) { clearInterval(run.iv); run.btn.textContent = "Avvia"; run = null; } };
+    sh.querySelectorAll("[data-go]").forEach(btn => btn.onclick = () => {
+      const x = TESTS.find(y => y.k === btn.dataset.go), clock = sh.querySelector(`[data-clock="${x.k}"]`), inp = sh.querySelector(`[data-v="${x.k}"]`);
+      if (run && run.k === x.k) { if (x.mode === "up") inp.value = Math.floor(run.t); stop(); return; }
+      stop(); VOICE.unlock(); VOICE.say("g_via.mp3");
+      const t0 = performance.now();
+      run = { k: x.k, btn, t: 0, iv: setInterval(() => {
+        run.t = (performance.now() - t0) / 1000;
+        const left = x.dur - run.t;
+        clock.textContent = x.mode === "down" ? Math.max(0, Math.ceil(left)) : Math.min(x.dur, Math.floor(run.t));
+        if (left <= 0) { VOICE.beep(660, 400); if (x.mode === "up") inp.value = x.dur; stop(); toast(x.mode === "down" ? "Tempo! Scrivi quante alzate hai fatto" : "60 secondi: bravissima!"); inp.focus(); }
+      }, 200) };
+      btn.textContent = "Ferma";
+    });
+    sh.querySelector("#tsave").onclick = () => {
+      TESTS.forEach(x => { const v = sh.querySelector(`[data-v="${x.k}"]`).value; vals[x.k] = v === "" ? null : +v; });
+      if (TESTS.every(x => vals[x.k] == null)) { toast("Scrivi almeno un risultato"); return; }
+      stop(); S.tests.push({ date: P.today(), ...vals }); save(); closeSheet(); toast("Mini-test salvato");
+      render();
+    };
+  }
+  function testsTable() {
+    if (!S.tests.length) return '<p class="muted">Ancora nessun mini-test. Lo trovi in «Oggi» a inizio programma e a fine di ogni blocco.</p><button class="btn small ghost" id="retest">Fai il mini-test</button>';
+    const f = S.tests[0];
+    return `<div class="tbl"><div class="tr th"><span>Data</span><span>Sedia</span><span>Plank</span><span>Equilibrio</span></div>${S.tests.map(r => `<div class="tr"><span>${esc(P.fmt(r.date))}</span>${TESTS.map(x => { const v = r[x.k], d = v != null && f[x.k] != null && r !== f ? v - f[x.k] : null; return `<span class="num">${v ?? "–"}${d ? ` <small class="${d > 0 ? "up" : "dn"}">${d > 0 ? "+" : ""}${d}</small>` : ""}</span>`; }).join("")}</div>`).join("")}</div><button class="btn small ghost" id="retest">Rifai il mini-test</button>`;
+  }
+
+  // ---------- SETTIMANE COMPLETE E PROGRESSIONE ----------
+  // Settimane (da lunedì) con almeno 2 sedute del programma: la serie conta all'indietro dall'ultima completa
+  function weekStreak() {
+    const wk = d => { const x = P.parse(d); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return P.iso(x); };
+    const n = {}; S.history.filter(h => h.type === "A" || h.type === "B").forEach(h => { const k = wk(h.date); n[k] = (n[k] || 0) + 1; });
+    let cur = wk(P.today()), streak = 0;
+    if (!(n[cur] >= 2)) cur = P.addDays(cur, -7);
+    while (n[cur] >= 2) { streak++; cur = P.addDays(cur, -7); }
+    return streak;
+  }
+  // Due sedute dello stesso tipo «Facile» di fila: +5" di lavoro (max +15). Due «Dura»: -5" (min -10).
+  function updateProg(type) {
+    if (type !== "A" && type !== "B") return "";
+    const mine = S.history.map((h, i) => ({ ...h, i })).filter(h => h.type === type && h.i > S.progMark[type]);
+    const last2 = mine.slice(-2);
+    if (last2.length < 2) return "";
+    const r = last2.map(h => h.rating);
+    if (r.every(x => x === "Facile") && S.prog[type] < 15) { S.prog[type] += 5; S.progMark[type] = S.history.length - 1; return `Due volte «facile»: dalla prossima seduta ${type} ogni esercizio dura 5 secondi in più.`; }
+    if (r.every(x => x === "Dura") && S.prog[type] > -10) { S.prog[type] -= 5; S.progMark[type] = S.history.length - 1; return `Due volte «dura»: dalla prossima seduta ${type} ogni esercizio dura 5 secondi in meno.`; }
+    return "";
+  }
+
+  // ---------- BENVENUTO ----------
+  const LOOK = {
+    hair: [["#2B211C", "Neri"], ["#4A3428", "Castani"], ["#8A5A3B", "Castano chiaro"], ["#C9A063", "Biondi"], ["#9A3B22", "Rossi"], ["#A9A6A2", "Grigi"]],
+    style: [["chignon", "Chignon"], ["coda", "Coda"], ["sciolti", "Sciolti"]],
+    top: [["#7B4F80", "Prugna"], ["#C8432B", "Corallo"], ["#2D6E68", "Verde"], ["#2E4A7D", "Blu"], ["#E7A6B6", "Rosa"], ["#F2F2F2", "Bianco"]],
+    leg: [["#34444C", "Grafite"], ["#1F1F24", "Neri"], ["#5B78A8", "Jeans"], ["#7B4F80", "Prugna"]],
+    skin: [["#F1C7A8", "Chiara"], ["#E3AE8F", "Media"], ["#C68E6B", "Ambrata"], ["#8D5B3F", "Scura"]]
+  };
+  function welcome(start = 0) {
+    const w = document.createElement("div"); w.className = "welcome"; w.setAttribute("role", "dialog"); w.setAttribute("aria-modal", "true");
+    document.body.appendChild(w); document.body.style.overflow = "hidden";
+    let step = start, fig = null;
+    const look = { skin: "#E3AE8F", top: "#7B4F80", leg: "#34444C", hair: "#4A3428", style: "chignon", ...S.look };
+    const dots = n => `<div class="w-dots">${[0, 1, 2, 3, 4].map(i => `<i class="${i === n ? "on" : ""}"></i>`).join("")}</div>`;
+    const pick = (k, label) => `<div><span class="lbl">${label}</span><div class="swatches" data-k="${k}">${LOOK[k].map(([v, n]) => k === "style" ? `<button class="chip" data-v="${v}" aria-pressed="${look[k] === v}">${n}</button>` : `<button class="swatch" data-v="${v}" aria-label="${n}" aria-pressed="${look[k] === v}" style="background:${v}"></button>`).join("")}</div></div>`;
+    const done = () => { if (fig && fig.stop) fig.stop(); S.welcomed = true; save(); w.remove(); document.body.style.overflow = ""; render(); };
+    const STEPS = [
+      () => `<div class="w-hero">👋</div><h1>Ciao! Benvenuta in Muoviamoci!</h1><p>Il tuo allenamento di casa, pensato per accompagnare il reformer del sabato: due sedute a settimana, guidate dalla voce di Isabella.</p>
+        <label class="w-name"><span class="lbl">Come ti chiami?</span><input id="wname" value="${esc(S.name)}" autocomplete="given-name" placeholder="Il tuo nome"></label>`,
+      () => `<div class="w-hero">🗓️</div><h1>Come funziona</h1><ul class="w-list"><li><b>Martedì e giovedì</b> una seduta di circa 40 minuti. La trovi già pronta in «Oggi».</li><li><b>Tocca un esercizio</b> per vederlo girare e ascoltare la spiegazione, prima di iniziare.</li><li><b>Premi «Inizia»</b>: Isabella ti guida con la voce e il telefono resta acceso. Puoi lasciarlo sul pavimento.</li></ul><button class="btn" id="wvoice">${I.sound} Ascolta Isabella</button>`,
+      () => `<div class="w-hero">👍</div><h1>L'app impara da te</h1><ul class="w-list"><li>Dopo ogni esercizio tocca il <b>pollice verde o rosso</b>: se qualcosa non va, l'esercizio cambia da solo.</li><li>Se il <b>ginocchio</b> dà fastidio, dillo con un tocco: arriva subito un'alternativa senza carico.</li><li>A fine seduta dimmi se è stata <b>facile o dura</b>: le sedute crescono con te.</li><li>Ogni minuto di allenamento ti porta avanti in un <b>viaggio in Giappone</b>, da Tokyo a Kyoto, con le sue cartoline.</li></ul>`,
+      () => `<h1>Il tuo manichino</h1><p class="muted">Fallo somigliare a te: sarà lui a mostrarti gli esercizi.</p><div class="stage w-stage" id="wstage" style="background:var(--z-glu)"></div>${pick("hair", "Capelli")}${pick("style", "Pettinatura")}${pick("top", "Maglietta")}${pick("leg", "Leggings")}${pick("skin", "Carnagione")}`,
+      () => `<div class="w-hero">🪞</div><h1>Specchio intelligente</h1><p>Durante alcuni esercizi in piedi (sedia, affondo, seduta al muro) il telefono può <b>guardarti con la fotocamera</b>: conta le ripetizioni e ti avvisa a voce se il ginocchio va verso l'interno o troppo in avanti.</p><p class="muted">Le immagini restano sul telefono: non vengono salvate né inviate. Puoi cambiare idea quando vuoi nelle Impostazioni.</p><div class="row"><button class="btn ${S.mirror === true ? "primary" : ""}" id="wmy">Sì, attivalo</button><button class="btn ${S.mirror === false ? "primary" : ""}" id="wmn">No, grazie</button></div>`
+    ];
+    function draw() {
+      if (fig && fig.stop) { fig.stop(); fig = null; }
+      w.innerHTML = `<div class="w-body">${STEPS[step]()}</div><div class="w-foot">${dots(step)}<div class="row">${step ? `<button class="btn ghost" id="wback">Indietro</button>` : ""}<button class="btn primary" id="wnext">${step === STEPS.length - 1 ? "Iniziamo!" : "Avanti"}</button></div></div>`;
+      const nm = w.querySelector("#wname"); if (nm) nm.oninput = () => { S.name = nm.value.trim().slice(0, 30); save(); };
+      const vb = w.querySelector("#wvoice"); if (vb) vb.onclick = () => { VOICE.unlock(); VOICE.setVolume(S.settings.volume); VOICE.say("g_prova.mp3"); };
+      const stg = w.querySelector("#wstage");
+      if (stg) {
+        const mount = () => { if (fig && fig.stop) fig.stop(); stg.innerHTML = ""; window.FIG_LOOK = look; fig = figure(stg, "R5"); };
+        mount();
+        w.querySelectorAll(".swatches").forEach(g => g.onclick = e => { const b = e.target.closest("button"); if (!b) return; look[g.dataset.k] = b.dataset.v; g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); S.look = { ...look }; save(); mount(); });
+      }
+      const my = w.querySelector("#wmy"), mn = w.querySelector("#wmn");
+      if (my) { my.onclick = () => { S.mirror = true; save(); draw(); }; mn.onclick = () => { S.mirror = false; save(); draw(); }; }
+      w.querySelector("#wnext").onclick = () => { if (step < STEPS.length - 1) { step++; draw(); } else done(); };
+      const bk = w.querySelector("#wback"); if (bk) bk.onclick = () => { step--; draw(); };
+      w.scrollTop = 0;
+    }
+    draw();
+  }
+
   // ---------- Impostazioni ----------
   function openSettings() {
     const st = S.settings;
     const sh = sheet(`<h2>Impostazioni</h2>
+      <label><span class="lbl">Il tuo nome</span><input id="sname" class="txt-in" value="${esc(S.name)}" autocomplete="given-name"></label>
+      <div class="row"><button class="btn small" id="slook">Cambia il manichino</button><button class="btn small ghost" id="swel">Rivedi il benvenuto</button></div>
+      <div><span class="lbl">Specchio intelligente (fotocamera)</span><div class="seg" id="mirror" style="margin-top:6px"><button data-v="1" aria-pressed="${S.mirror === true}">Attivo</button><button data-v="0" aria-pressed="${S.mirror !== true}">Spento</button></div>
+        <p class="muted" style="margin-top:6px">Negli esercizi in piedi con il ginocchio (sedia, affondo, seduta al muro) conta le ripetizioni e avvisa se il ginocchio va verso l'interno. Le immagini restano sul telefono.</p></div>
       <div><span class="lbl">Guida della voce</span><div class="seg" id="guide" style="margin-top:6px">${[["completa", "Completa"], ["essenziale", "Essenziale"], ["tempo", "Solo tempo"]].map(([k, n]) => `<button data-v="${k}" aria-pressed="${st.guide === k}">${n}</button>`).join("")}</div>
         <p class="muted" style="margin-top:6px">Completa: posizione, respiro e consigli. Essenziale: respiro e conto alla rovescia. Solo tempo: solo il conto, con un bip.</p></div>
       <div><label class="lbl" for="vol">Volume della voce</label><input type="range" id="vol" min="0.2" max="1" step="0.1" value="${st.volume}"></div>
       <button class="btn" id="tryv">${I.sound} Prova la voce</button>
-      <p class="muted">Puoi ascoltare la tua musica da un'altra app: la voce di Isabella si sente sopra.</p>
+      <p class="muted">Puoi ascoltare la tua musica da un'altra app: la voce di Isabella si sente sopra, senza fermarla.</p>
       <p class="muted">Figure: ${has3D ? "manichino 3D" : "disegno 2D (questo telefono non supporta il 3D)"}.</p>`);
+    $("#sname", sh).oninput = e => { S.name = e.target.value.trim().slice(0, 30); save(); };
+    $("#slook", sh).onclick = () => { closeSheet(); welcome(3); };
+    $("#swel", sh).onclick = () => { closeSheet(); welcome(0); };
+    $("#mirror", sh).onclick = e => { const b = e.target.closest("button"); if (!b) return; S.mirror = b.dataset.v === "1"; save(); sh.querySelectorAll("#mirror button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
     $("#guide", sh).onclick = e => { const b = e.target.closest("button"); if (!b) return; st.guide = b.dataset.v; save(); sh.querySelectorAll("#guide button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
     $("#vol", sh).oninput = e => { st.volume = +e.target.value; VOICE.setVolume(st.volume); save(); };
     $("#tryv", sh).onclick = () => { VOICE.unlock(); VOICE.setVolume(st.volume); VOICE.say("g_prova.mp3"); };
   }
 
   // ---------- Fogli a comparsa ----------
-  let sheetBack = null;
+  let sheetBack = null, playerBack = null;
+  // Tasto «Indietro» di Android: chiude la scheda aperta; durante la seduta chiede se uscire
+  window.addEventListener("popstate", () => {
+    if (playerBack) { try { history.pushState({ m: "player" }, ""); } catch (e) { } playerBack(); }
+    else if (sheetBack) closeSheet();
+  });
   function sheet(html) {
     closeSheet();
     sheetBack = document.createElement("div"); sheetBack.className = "sheet-back";
     sheetBack.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}<button class="btn ghost" data-close>Chiudi</button></div>`;
     document.body.appendChild(sheetBack);
+    try { history.pushState({ m: "sheet" }, ""); } catch (e) { }
     sheetBack.addEventListener("click", e => { if (e.target === sheetBack || e.target.closest("[data-close]")) closeSheet(); });
     return sheetBack.querySelector(".sheet");
   }
@@ -413,15 +579,22 @@
       <div class="p-ctrl"><button class="btn" id="pprev" aria-label="Indietro">${I.prev}</button><button class="btn primary" id="ppause" aria-label="Pausa">${I.pause}</button><button class="btn" id="pnextb" aria-label="Avanti">${I.next}</button></div>`;
     document.body.appendChild(el);
     document.body.style.overflow = "hidden";
+    try { history.pushState({ m: "player" }, ""); } catch (e) { }
     const q = id => el.querySelector("#" + id);
     VOICE.onText(t => { q("pcap").textContent = t; });
 
+    let finished = false, active = 0;
+    const sid = Date.now();
     let idx = -1, t = 0, last = performance.now(), paused = false, fig = null, figId = null, cues = [], fired = new Set(), timer = null, lock = null, lastWork = null;
     const seen = new Set();
     const elapsedBefore = i => steps.slice(0, i).reduce((a, x) => a + x.dur, 0);
-    const wake = async () => { try { if ("wakeLock" in navigator) lock = await navigator.wakeLock.request("screen"); } catch (e) { } };
+    const wake = async () => { try { if ("wakeLock" in navigator) { lock = await navigator.wakeLock.request("screen"); lock.addEventListener("release", () => { lock = null; }); } } catch (e) { } };
     wake();
-    const onVis = () => { if (document.visibilityState === "visible" && !lock) wake(); };
+    // Uscita dall'app (telefonata, altra app): pausa automatica; al ritorno schermo di nuovo sempre acceso
+    const onVis = () => {
+      if (document.visibilityState === "hidden") { if (!paused && !finished) q("ppause").click(); }
+      else if (!lock && !finished) wake();
+    };
     document.addEventListener("visibilitychange", onVis);
 
     const say = (file, opts) => { if (guide === "tempo" && !/g_(tre|due|uno)/.test(file)) return; VOICE.say(file, { text: CLIP_TEXT[file], ...opts }); };
@@ -433,7 +606,7 @@
       if (st.kind === "intro") { c.push({ t: 0.2, fn: () => say(st.clip + ".mp3") }); if (idx === 0) c.unshift({ t: 0, fn: () => say("g_benvenuta.mp3") }); }
       if (st.kind === "rest") {
         if (st.first) {
-          if (st.block.k === "forza" || st.block.k === "finale") c.push({ t: 0.1, fn: () => say(st.dur > 10 ? "g_recupero.mp3" : "g_recupero_calmo.mp3", { prio: "l" }) });
+          if ((st.block.k === "forza" || st.block.k === "finale") && st.n !== 0) c.push({ t: 0.1, fn: () => say(st.dur > 10 ? "g_recupero.mp3" : "g_recupero_calmo.mp3", { prio: "l" }) });
           c.push({ t: 0.6, fn: () => say(`ex_${e.id}_nome.mp3`) });
           if (guide === "completa" && !seen.has(e.id) && d >= 8) c.push({ t: 1.2, fn: () => say(`ex_${e.id}_desc.mp3`, { maxDelay: Math.max(1, d - 6) }) });
           if (st.side) c.push({ t: 1.0, fn: () => say("g_lato_dx.mp3", { maxDelay: 4 }) });
@@ -495,9 +668,9 @@
     function voteBox(box, e) {
       const date = P.today();
       box.innerHTML = `<div class="vote-box"><span class="muted">Com'era «${esc(e.n)}»?</span><div class="thumbs"><button class="thumb up" aria-label="Mi è piaciuto" aria-pressed="false">${I.up}</button><button class="thumb down" aria-label="Non mi è piaciuto" aria-pressed="false">${I.down}</button></div><div class="reasons" hidden>${REASONS.map(([k, n]) => `<button data-r="${k}" aria-pressed="false">${n}</button>`).join("")}</div></div>`;
-      let vote = null;
+      let vote = null, saved = null;
       const up = box.querySelector(".up"), dn = box.querySelector(".down"), rs = box.querySelector(".reasons");
-      const store = () => { S.votes = S.votes.filter(x => x !== vote); vote = { id: e.id, date, ...vote }; S.votes.push(vote); applyVoteRules(e.id); save(); };
+      const store = () => { S.votes = S.votes.filter(x => x !== saved && !(x.sid === sid && x.id === e.id)); saved = { id: e.id, date, sid, ...vote }; S.votes.push(saved); applyVoteRules(e.id); save(); };
       up.onclick = () => { up.setAttribute("aria-pressed", "true"); dn.setAttribute("aria-pressed", "false"); rs.hidden = true; vote = { ...(vote || {}), v: "up", r: undefined }; store(); };
       dn.onclick = () => { dn.setAttribute("aria-pressed", "true"); up.setAttribute("aria-pressed", "false"); rs.hidden = false; vote = { ...(vote || {}), v: "down" }; store(); };
       rs.onclick = ev => { const b = ev.target.closest("button"); if (!b) return; rs.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); vote = { ...vote, r: b.dataset.r }; store(); };
@@ -512,32 +685,51 @@
       q("pleft").textContent = `${Math.max(0, Math.ceil((total - done) / 60))} min alla fine`;
     }
     function tick() {
-      const now = performance.now(), dt = (now - last) / 1000; last = now;
+      const now = performance.now(), dt = Math.min(1, (now - last) / 1000); last = now;
       if (paused || idx < 0) return;
-      t += dt;
+      t += dt; active += dt;
       const st = steps[idx];
       for (const c of cues) if (!fired.has(c) && t >= c.t) { fired.add(c); try { c.fn(); } catch (e) { } }
+      // Le frasi di apertura (benvenuto, inizio blocco) finiscono sempre prima di passare oltre
+      if (t >= st.dur && st.kind === "intro" && VOICE.busy() && t < st.dur + 12) return;
       if (t >= st.dur) { enter(idx + 1); return; }
       draw();
     }
     function finish() {
+      if (finished) return;
+      finished = true;
       clearInterval(timer); VOICE.stop(); say("g_fine.mp3");
       if (fig && fig.stop) fig.stop();
-      const minDone = Math.round((elapsedBefore(Math.min(idx, steps.length)) + 0) / 60) || Math.round(total / 60);
-      el.className = "player is-rest";
-      el.innerHTML = `<div class="screen" style="padding-top:calc(30px + env(safe-area-inset-top,0px))"><h1>Seduta completata!</h1>
-        <p class="muted">${esc(meta.title)} · ${minDone} minuti</p>
-        <section class="card"><h3>Com'era la seduta?</h3><div class="seg" id="rate">${["Facile", "Giusta", "Dura"].map(k => `<button data-v="${k}" aria-pressed="false">${k}</button>`).join("")}</div></section>
-        <button class="btn primary big" id="fsave">Salva e chiudi</button></div>`;
-      let rating = "";
-      el.querySelector("#rate").onclick = e => { const b = e.target.closest("button"); if (!b) return; rating = b.dataset.v; el.querySelectorAll("#rate button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
+      try { if (lock) lock.release(); } catch (e) { }
+      // Salvata subito, con i minuti davvero fatti: il giudizio si aggiunge dopo
+      const minDone = Math.max(1, Math.round(active / 60));
+      const kmBefore = tripKm();
+      const entry = { date: P.today(), title: meta.title, min: minDone, rating: "", type: meta.planned ? meta.planned.type : "P" };
+      S.history.push(entry);
+      if (meta.planned) S.done[meta.planned.i] = { date: P.today(), rating: "" };
+      save();
+      const km = tripKm(), fresh = newCards(), streak = weekStreak(), tot = S.history.length;
+      el.className = "player is-party";
+      el.innerHTML = `<div class="confetti" aria-hidden="true">${Array.from({ length: 36 }, (_, k) => `<i style="left:${(k * 97) % 100}%;animation-delay:${(k % 9) * 0.25}s;background:${["#C8432B", "#2D6E68", "#E7A6B6", "#F2C14E", "#5B78A8"][k % 5]}"></i>`).join("")}</div>
+        <div class="screen party"><div class="party-hero">🎉</div><h1>Brava${S.name ? ", " + esc(S.name) : ""}!</h1>
+        <p class="muted">${esc(meta.title)}</p>
+        <div class="tiles"><div><b class="num">${minDone}</b><span>minuti oggi</span></div><div><b class="num">${tot}</b><span>${tot === 1 ? "seduta fatta" : "sedute fatte"}</span></div><div><b class="num">${streak}</b><span>${streak === 1 ? "settimana completa" : "settimane complete"} di fila</span></div></div>
+        <section class="card"><h3>Com'è andata?</h3><div class="faces" id="rate">${[["Facile", "😌", "Facile"], ["Giusta", "🙂", "Giusta"], ["Dura", "😅", "Dura"]].map(([k, f, n]) => `<button data-v="${k}" aria-pressed="false"><span>${f}</span>${n}</button>`).join("")}</div><p class="muted" id="progmsg">Le sedute si adattano: due volte «facile» di fila e la prossima sarà un po' più lunga.</p></section>
+        <section class="card trip-mini"><div class="between"><span class="lbl">Viaggio sul Tōkaidō</span><span class="num">+${km - kmBefore} km · ${km} / ${VIAGGIO.TOT}</span></div>${VIAGGIO.map(km)}
+          ${fresh.map(i => `<div class="newcard"><span class="lbl">Nuova cartolina!</span>${VIAGGIO.card(i)}<p><b>${esc(VIAGGIO.STOPS[i].n)}</b> · ${esc(VIAGGIO.STOPS[i].t)}</p></div>`).join("")}</section>
+        <button class="btn primary big" id="fsave">Chiudi</button></div>`;
+      el.querySelector("#rate").onclick = e => {
+        const b = e.target.closest("button"); if (!b) return;
+        el.querySelectorAll("#rate button").forEach(x => x.setAttribute("aria-pressed", x === b));
+        entry.rating = b.dataset.v; if (meta.planned) S.done[meta.planned.i].rating = entry.rating; save();
+      };
       el.querySelector("#fsave").onclick = () => {
-        S.history.push({ date: P.today(), title: meta.title, min: minDone, rating, type: meta.planned ? meta.planned.type : "P" });
-        if (meta.planned) S.done[meta.planned.i] = { date: P.today(), rating };
-        save(); close(); toast("Seduta salvata. Brava!"); go("oggi");
+        const msg = entry.rating ? updateProg(entry.type) : "";
+        save(); close(); toast(msg || "Seduta salvata. Brava!"); go("oggi");
       };
     }
     function close() {
+      playerBack = null;
       clearInterval(timer); VOICE.stop(); VOICE.onText(null);
       if (fig && fig.stop) fig.stop();
       document.removeEventListener("visibilitychange", onVis);
@@ -551,9 +743,11 @@
     };
     q("pnextb").onclick = () => enter(idx + 1);
     q("pprev").onclick = () => { if (t > 3) enter(idx); else { let k = idx - 1; while (k > 0 && steps[k].kind !== "work") k--; enter(Math.max(0, k - 1)); } };
-    q("pclose").onclick = () => {
+    q("pclose").onclick = playerBack = () => {
+      if (finished) { el.querySelector("#fsave").click(); return; }
+      if (document.querySelector(".exit-ask")) return;
       const was = paused; paused = true; VOICE.pauseAll();
-      const box = document.createElement("div"); box.className = "sheet-back";
+      const box = document.createElement("div"); box.className = "sheet-back exit-ask";
       box.innerHTML = `<div class="sheet"><h2>Vuoi uscire?</h2><p class="muted">La seduta non verrà segnata come fatta.</p><div class="row"><button class="btn danger" id="yes">Esci</button><button class="btn primary" id="no">Continua</button></div></div>`;
       document.body.appendChild(box);
       box.querySelector("#yes").onclick = () => { box.remove(); close(); go("oggi"); };
@@ -568,5 +762,10 @@
 
   // ---------- Avvio ----------
   renderTabs(); render();
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { }
+  if (!S.welcomed) welcome(0);
+  // Ritorno all'app un altro giorno: la schermata si aggiorna con la data nuova
+  let shownDay = P.today();
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && P.today() !== shownDay) { shownDay = P.today(); if (!document.querySelector(".player")) render(); } });
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => { });
 })();

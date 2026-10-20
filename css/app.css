@@ -7,7 +7,7 @@
   --accent: #2A6B65; --accent-ink: #FFFFFF; --accent-soft: #D7EBE7;
   --work: #E0533A; --work-soft: #FBE1DA; --rest: #2A6B65; --rest-soft: #D7EBE7;
   --ok: #2F7D4B; --ok-bg: #E1F2E6; --no: #B8392F; --no-bg: #FAE0DD; --warn: #A6620F; --warn-bg: #FFF0D9;
-  --z-risc: #FFE6CC; --z-glu: #F8D5DE; --z-cos: #E4DAF6; --z-add: #D4EAF6; --z-bra: #D7EFDB; --z-yoga: #F2EBC4;
+  --z-risc: #FFE6CC; --z-glu: #F8D5DE; --z-cos: #E4DAF6; --z-add: #D4EAF6; --z-bra: #D7EFDB; --z-yoga: #F2EBC4; --z-eq: #DCEFE8;
   --cal-a: #F8D5DE; --cal-b: #D4EAF6; --cal-r: #E3E9E6;
   --skin: #E3AE8F; --skin-far: #C99A80; --top: #7B4F80; --leg: #34444C; --leg-far: #7E8D94; --hair: #4A3428;
   --mat: #9FC3B8; --shadow: rgba(30,42,44,.12); --prop: #B9A98F; --bell: #2D6E68; --cushion: #E7A6B6; --hl: #FF6B3D; --arrow: #2A6B65; --outline: rgba(30,42,44,.28);
@@ -22,7 +22,7 @@
     --accent: #6CC1B6; --accent-ink: #0E1A1A; --accent-soft: #1F3A37;
     --work: #FF7A5E; --work-soft: #42261F; --rest: #6CC1B6; --rest-soft: #1F3A37;
     --ok: #7FD39A; --ok-bg: #1E3627; --no: #F2877D; --no-bg: #432422; --warn: #F0B565; --warn-bg: #3E3020;
-    --z-risc: #4A3A27; --z-glu: #4B2D36; --z-cos: #3A3150; --z-add: #243E4C; --z-bra: #284331; --z-yoga: #454024;
+    --z-risc: #4A3A27; --z-glu: #4B2D36; --z-cos: #3A3150; --z-add: #243E4C; --z-bra: #284331; --z-yoga: #454024; --z-eq: #213F37;
     --cal-a: #4B2D36; --cal-b: #243E4C; --cal-r: #2A3334;
     --leg: #3E5059; --leg-far: #2B383E; --skin-far: #9C7764; --mat: #4F6E66; --shadow: rgba(0,0,0,.35); --arrow: #6CC1B6; --bell: #6CC1B6;
     color-scheme: dark;
@@ -181,3 +181,54 @@ details.fold[open] > summary::after { content: "–"; }
 .fig-arrow { fill: none; stroke: var(--arrow); stroke-width: 2; stroke-dasharray: 3 3; opacity: .7; }
 .fig-arrowhead { fill: var(--arrow); opacity: .8; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Benvenuto */
+.welcome { position: fixed; inset: 0; z-index: 60; background: var(--bg); overflow: auto; display: flex; flex-direction: column; padding: calc(24px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); }
+.w-body { flex: 1; max-width: 560px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.w-body h1 { font-size: 1.8rem; color: var(--accent); }
+.w-body p { margin: 0; font-size: 1.05rem; }
+.w-hero { font-size: 3.4rem; line-height: 1; margin-top: 12px; }
+.w-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 1.02rem; }
+.w-name input, .txt-in, .num-in { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 1.15rem; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.num-in { width: 110px; display: inline-block; margin: 0; }
+.w-foot { max-width: 560px; width: 100%; margin: 18px auto 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.w-dots { display: flex; gap: 6px; } .w-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); } .w-dots i.on { background: var(--accent); width: 22px; border-radius: 4px; }
+.w-stage { aspect-ratio: 4/3; }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.swatch { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; }
+.swatch[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Viaggio */
+.trip-card { text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.trip-map { width: 100%; height: auto; display: block; border-radius: 12px; }
+.pc { width: 100%; height: auto; display: block; border-radius: 10px; box-shadow: 0 2px 10px rgba(60,40,10,.18); }
+.pc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.pc-fig { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.pc-fig figcaption { font-size: .9rem; }
+.sheet.washi { background: #F7F0E1; color: #2B2A28; }
+.newcard { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; animation: pop .6s ease-out; }
+@keyframes pop { from { transform: scale(.85) rotate(-2deg); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Mini-test */
+.tbl { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+.tbl .tr { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.tbl .th { font-weight: 700; color: var(--muted); font-size: .78rem; text-transform: uppercase; }
+.tbl small.up { color: var(--ok); font-weight: 700; } .tbl small.dn { color: var(--no); font-weight: 700; }
+
+/* Festa di fine seduta */
+.player.is-party { overflow: auto; }
+.party { position: relative; z-index: 1; }
+.party h1 { font-size: 2.2rem; color: var(--accent); }
+.party-hero { font-size: 3.6rem; line-height: 1; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tiles div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 8px; text-align: center; display: flex; flex-direction: column; gap: 2px; }
+.tiles b { font-family: var(--f-display); font-size: 2rem; line-height: 1; color: var(--accent); }
+.tiles span { font-size: .78rem; color: var(--muted); font-weight: 600; }
+.faces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.faces button { border: 2px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 4px; font: inherit; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--ink); }
+.faces button span { font-size: 2rem; }
+.faces button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.confetti i { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; animation: fall 3.2s linear 2 forwards; opacity: .9; }
+@keyframes fall { to { transform: translateY(105vh) rotate(540deg); } }
+@media (prefers-reduced-motion: reduce) { .confetti { display: none; } .newcard { animation: none; } }

@@ -5,7 +5,8 @@ const ZONES = {
   cos:{n:"Interno ed esterno coscia", c:"var(--z-cos)"},
   add:{n:"Addome e girovita", c:"var(--z-add)"},
   bra:{n:"Braccia e schiena alta", c:"var(--z-bra)"},
-  yoga:{n:"Yoga e allungamento", c:"var(--z-yoga)"}
+  yoga:{n:"Yoga e allungamento", c:"var(--z-yoga)"},
+  eq:{n:"Equilibrio, ossa e pavimento pelvico", c:"var(--z-eq)"}
 };
 const TW = "Asciugamano piegato sotto il ginocchio d'appoggio.";
 // k: ginocchio "ok" | "att"; s: seduta; b: blocco da cui si usa
@@ -68,7 +69,11 @@ const EX = [
  {id:"Y5",z:"yoga",n:"Torsione supina",s:"A B",b:"1",k:"ok",d:"Supina, porta un ginocchio piegato verso il lato opposto, braccio aperto e sguardo dall'altra parte.",r:"Respiro lento, espira lasciando andare.",v:"Ginocchio destro verso sinistra, braccio destro aperto. Lascia che il peso lavori da solo. Espira e senti la schiena che ruota dolcemente.",e:"Staccare la spalla per scendere di più."},
  {id:"Y6",z:"yoga",n:"Affondo basso",s:"B",b:"1",k:"att",kn:"Ginocchio dietro su un asciugamano piegato. Se dà fastidio: versione in piedi con mano al muro.",d:"Un ginocchio a terra e un piede avanti. Porta il bacino appena avanti tenendo il busto dritto.",r:"Inspira crescendo, espira scendendo un poco.",v:"Ginocchio dietro sull'asciugamano. Stringi il gluteo dietro e porta il bacino appena avanti. Inspira, cresci… espira, scendi un poco. Senti l'anca davanti che si apre.",e:"Ginocchio davanti oltre la punta del piede."},
  {id:"Y7",z:"yoga",n:"Farfalla seduta",s:"A",b:"1",k:"ok",kn:"Piedi più lontani dal bacino se il ginocchio tira.",d:"Seduta, piante dei piedi unite, ginocchia aperte. Cresci con la schiena e inclinati appena in avanti.",r:"Inspira crescendo, espira inclinandoti.",v:"Piante dei piedi unite, schiena lunga. Inspira e cresci… espira e inclinati in avanti dalle anche, senza spingere sulle ginocchia.",e:"Premere sulle ginocchia con le mani."},
- {id:"Y8",z:"yoga",n:"Rilassamento finale",s:"A B",b:"1",k:"ok",d:"Supina, braccia lungo i fianchi, occhi chiusi. Due minuti di respiro lento.",r:"Inspira in 4 tempi, espira in 6.",v:"Lascia il corpo pesante sul tappetino. Inspira in quattro tempi… espira in sei. Hai fatto un ottimo lavoro oggi.",e:"—"}
+ {id:"Y8",z:"yoga",n:"Rilassamento finale",s:"A B",b:"1",k:"ok",d:"Supina, braccia lungo i fianchi, occhi chiusi. Due minuti di respiro lento.",r:"Inspira in 4 tempi, espira in 6.",v:"Lascia il corpo pesante sul tappetino. Inspira in quattro tempi… espira in sei. Hai fatto un ottimo lavoro oggi.",e:"—"},
+ {id:"E1",z:"eq",n:"Equilibrio su una gamba",s:"A",b:"1",k:"ok",kn:"Il ginocchio d'appoggio resta morbido, mai bloccato.",d:"In piedi di fianco alla sedia, una mano appoggiata. Solleva un piede con il ginocchio piegato e resta in equilibrio. Quando ti senti sicura, stacca la mano.",r:"Respiro lento e regolare.",v:"Mano sulla sedia, sguardo fisso su un punto davanti a te. Solleva il piede… e resta. Ginocchio d'appoggio morbido, addome attivo. Se ti senti sicura, stacca la mano dalla sedia.",e:"Bloccare il ginocchio d'appoggio o trattenere il respiro.",x:"Più difficile: chiudi gli occhi per qualche secondo, sempre vicino alla sedia."},
+ {id:"E2",z:"eq",n:"Alzate sui talloni",s:"A",b:"1",k:"ok",d:"In piedi vicino alla sedia, una mano appoggiata. Sali sulle punte, tieni un istante e scendi piano.",r:"Espira salendo, inspira scendendo.",v:"Mano sulla sedia, piedi paralleli. Espira e sali sulle punte… tieni… inspira e scendi piano, senza far cadere i talloni. Questo lavoro fa bene alle ossa.",e:"Far cadere i talloni di colpo.",x:"Più difficile: su una gamba sola, con la mano sulla sedia."},
+ {id:"E3",z:"eq",n:"Passo laterale",s:"B",b:"1",k:"ok",kn:"Ginocchia appena piegate, passi corti, niente torsioni.",d:"In piedi, ginocchia morbide, mani sui fianchi. Fai due passi di lato verso destra e due verso sinistra, piedi sempre paralleli.",r:"Respiro regolare.",v:"Ginocchia morbide, mani sui fianchi. Un passo di lato… avvicina l'altro piede… e ancora. Poi torna dall'altra parte. Piedi paralleli, bacino fermo.",e:"Incrociare i piedi o girare il busto."},
+ {id:"E4",z:"eq",n:"Pavimento pelvico",s:"B",b:"1",k:"ok",d:"Supina, ginocchia piegate. Contrai i muscoli del pavimento pelvico come per trattenere, tieni 5 secondi e rilascia del tutto.",r:"Espira contraendo, inspira rilasciando.",v:"Supina, ginocchia piegate, glutei rilassati. Espira e contrai dal basso, come per trattenere… tieni… inspira e rilascia del tutto. Non stringere i glutei, non spingere la pancia.",e:"Stringere i glutei o trattenere il respiro."},
 ];
 const PERCHE = {
  R1:"Il reformer lavora molto sul respiro laterale. Ripassarlo all'inizio porta nello stesso schema e attiva il core profondo prima della forza.",
@@ -124,6 +129,10 @@ const PERCHE = {
  Y5:"Rilascia la colonna in rotazione, con il pavimento che sostiene.",
  Y6:"Apre i flessori dell'anca, che stando sedute si accorciano e tirano la schiena bassa. Bilancia il lavoro dei glutei.",
  Y7:"Allunga l'interno coscia dopo gli esercizi per gli adduttori.",
- Y8:"Porta il corpo dal lavoro al recupero: il battito scende e la seduta si chiude con calma."
+ Y8:"Porta il corpo dal lavoro al recupero: il battito scende e la seduta si chiude con calma.",
+ E1:"L'equilibrio cala dopo i 40 anni se non si allena: protegge da storte e cadute e rinforza i piccoli muscoli intorno al ginocchio. Sul reformer si lavora sdraiate, qui in piedi.",
+ E2:"Il carico su punte e talloni stimola le ossa di gambe e anche: dopo i 45 anni è uno degli esercizi più utili contro l'osteoporosi, senza salti.",
+ E3:"Rinforza l'esterno anca che tiene fermo il bacino quando cammini: più equilibrio e meno cadute.",
+ E4:"Con gli anni e la menopausa il pavimento pelvico si indebolisce: allenarlo previene le perdite e sostiene l'addome profondo, come nel lavoro del reformer."
 };
 const BY = Object.fromEntries(EX.map(e=>[e.id,e]));

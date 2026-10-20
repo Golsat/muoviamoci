@@ -11,6 +11,7 @@ const FIG3D = (() => {
   const SIDE = { root: [0, 0, -90], neck: [0, 0, 8], shL: [-175, 0, 0], elL: [-20, 0, 0], shR: [-60, 0, 0], elR: [-40, 0, 0] };
   const SUP = { root: [-90, 0, 0], hpL: [-45, 0, 0], hpR: [-45, 0, 0], knL: [100, 0, 0], knR: [100, 0, 0], anL: [35, 0, 0], anR: [35, 0, 0], shL: [0, 0, 6], shR: [0, 0, -6] };
   const SUPL = { root: [-90, 0, 0], shL: [0, 0, 6], shR: [0, 0, -6], anL: [-15, 0, 0], anR: [-15, 0, 0] };
+  const EQ_TOE = 40; // alzata sui talloni: rotazione della caviglia
   const HANDS_HIPS = { shL: [0, 0, 35], elL: [-95, 0, 0], shR: [0, 0, -35], elR: [-95, 0, 0] };
   const N = {
     R4: { cam: [15, 32], K: [SUP, { ...SUP, hpL: [-45, 42, 0], hpR: [-45, 42, 0] }] },
@@ -54,6 +55,16 @@ const FIG3D = (() => {
     M6: { cam: [35, 25], K: [
       { ...SUP, shL: [-90, 0, 0], elL: [-12, 0, 0], shR: [-90, 0, 0], elR: [-12, 0, 0] },
       { ...SUP, shL: [-90, 72, 0], elL: [-18, 0, 0], shR: [-90, -72, 0], elR: [-18, 0, 0] }] },
+    E1: { cam: [10, 8], pr: [{ type: "chairSide", j: "haR", k: 0 }], K: [
+      { ...HANDS_HIPS, shR: [-15, 0, -28], elR: [-30, 0, 0] },
+      { ...HANDS_HIPS, shR: [-15, 0, -28], elR: [-30, 0, 0], hpL: [-70, 0, 0], knL: [85, 0, 0], knR: [5, 0, 0] }] },
+    E2: { cam: [45, 10], pr: [{ type: "chairSide", j: "haR", k: 0 }], K: [
+      { ...HANDS_HIPS, shR: [-15, 0, -28], elR: [-30, 0, 0] },
+      { ...HANDS_HIPS, shR: [-15, 0, -28], elR: [-30, 0, 0], anL: [EQ_TOE, 0, 0], anR: [EQ_TOE, 0, 0] }] },
+    E3: { cam: [12, 8], an: "anR", K: [
+      { ...HANDS_HIPS, hpL: [-8, 0, 0], hpR: [-8, 0, 0], knL: [14, 0, 0], knR: [14, 0, 0] },
+      { ...HANDS_HIPS, hpL: [-8, 0, 24], hpR: [-8, 0, -4], knL: [14, 0, 0], knR: [14, 0, 0] }] },
+    E4: { cam: [35, 25], K: [SUP, { ...SUP, root: [-93, 0, 0], spine: [-2, 0, 0] }] },
     Y5: { cam: [20, 40], K: [
       { ...SUPL, shL: [0, 0, 85], shR: [0, 0, -85], hpR: [-75, 0, 0], knR: [95, 0, 0] },
       { ...SUPL, root: [-90, -28, 0], shL: [0, 0, 85], shR: [0, 0, -85], hpR: [-75, -45, 0], knR: [95, 0, 0], neck: [0, 30, 0] }] }
@@ -105,13 +116,16 @@ const FIG3D = (() => {
   const C = hex => new THREE.Color(hex).convertSRGBToLinear();
   function mats(hl) {
     const m = (hex, rough = 0.62) => new THREE.MeshStandardMaterial({ color: C(hex), roughness: rough, metalness: 0, emissive: C("#FF6B3D"), emissiveIntensity: 0 });
-    const M = { skin: m("#E3AE8F", 0.55), top: m("#7B4F80"), leg: m("#34444C", 0.7), hair: m("#4A3428", 0.8), bell: m("#2D6E68", 0.4), wood: m("#B9A98F", 0.8), cush: m("#E7A6B6", 0.9) };
-    M.gluteHl = hl.includes("glute") ? m("#34444C", 0.7) : M.leg;
-    M.thighHl = hl.includes("thigh") ? m("#34444C", 0.7) : M.leg;
-    M.torsoHl = ["core", "back", "chest"].some(k => hl.includes(k)) ? m("#7B4F80") : M.top;
-    M.deltHl = hl.includes("shoulder") ? m("#7B4F80") : M.top;
-    M.armHl = hl.includes("arm") ? m("#E3AE8F", 0.55) : M.skin;
+    // Aspetto scelto da lei nel benvenuto (FIG_LOOK), altrimenti i colori di partenza
+    const LK = { skin: "#E3AE8F", top: "#7B4F80", leg: "#34444C", hair: "#4A3428", ...(window.FIG_LOOK || {}) };
+    const M = { skin: m(LK.skin, 0.55), top: m(LK.top), leg: m(LK.leg, 0.7), hair: m(LK.hair, 0.8), bell: m("#2D6E68", 0.4), wood: m("#B9A98F", 0.8), cush: m("#E7A6B6", 0.9) };
+    M.gluteHl = hl.includes("glute") ? m(LK.leg, 0.7) : M.leg;
+    M.thighHl = hl.includes("thigh") ? m(LK.leg, 0.7) : M.leg;
+    M.torsoHl = ["core", "back", "chest"].some(k => hl.includes(k)) ? m(LK.top) : M.top;
+    M.deltHl = hl.includes("shoulder") ? m(LK.top) : M.top;
+    M.armHl = hl.includes("arm") ? m(LK.skin, 0.55) : M.skin;
     M.glow = [M.gluteHl, M.thighHl, M.torsoHl, M.deltHl, M.armHl].filter(x => x !== M.leg && x !== M.top && x !== M.skin);
+    M.style = LK.style || "chignon";
     return M;
   }
   function seg(parent, len, r1, r2, mat) {
@@ -137,7 +151,10 @@ const FIG3D = (() => {
     const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.042, 0.09, 16), M.skin); nk.position.y = 0.04; J.neck.add(nk);
     ball(J.neck, 0.105, M.skin, [0, 0.16, 0.005], [0.92, 1.08, 1]);
     ball(J.neck, 0.11, M.hair, [0, 0.175, -0.018], [0.95, 1.04, 0.97]);
-    ball(J.neck, 0.052, M.hair, [0, 0.24, -0.1]);
+    // Capelli: chignon, coda o sciolti (scelta nel benvenuto)
+    if (M.style === "chignon") ball(J.neck, 0.052, M.hair, [0, 0.24, -0.1]);
+    if (M.style === "coda") { ball(J.neck, 0.04, M.hair, [0, 0.22, -0.11]); ball(J.neck, 1, M.hair, [0, 0.13, -0.14], [0.035, 0.1, 0.035]); }
+    if (M.style === "sciolti") ball(J.neck, 1, M.hair, [0, 0.12, -0.05], [0.105, 0.14, 0.075]);
     for (const [s, x] of [["L", 1], ["R", -1]]) {
       J["sh" + s] = grp(J.spine, [0.165 * x, 0.42, 0]);
       ball(J["sh" + s], 0.056, M.deltHl);
@@ -180,7 +197,7 @@ const FIG3D = (() => {
     const M = mats(spec.hl || []);
     let renderer;
     try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { return null; }
-    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1)); // meno calore e batteria
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -305,7 +322,9 @@ const FIG3D = (() => {
     f.frame(performance.now());
     return f;
   }
-  function loop(now) { for (const f of live) if (f.visible && !f.paused) f.frame(now); requestAnimationFrame(loop); }
+  // 30 fotogrammi al secondo bastano per movimenti lenti: metà consumo in una seduta di 45 minuti
+  let lastF = 0;
+  function loop(now) { requestAnimationFrame(loop); if (now - lastF < 32) return; lastF = now; for (const f of live) if (f.visible && !f.paused) f.frame(now); }
   requestAnimationFrame(loop);
   return { mount, available: () => typeof THREE !== "undefined" };
 })();
