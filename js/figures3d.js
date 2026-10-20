@@ -9,8 +9,8 @@ const FIG3D = (() => {
 
   // Pose costruite direttamente in 3D (movimenti laterali e rotazioni)
   const SIDE = { root: [0, 0, -90], neck: [0, 0, 8], shL: [-175, 0, 0], elL: [-20, 0, 0], shR: [-60, 0, 0], elR: [-40, 0, 0] };
-  const SUP = { root: [-90, 0, 0], hpL: [-45, 0, 0], hpR: [-45, 0, 0], knL: [100, 0, 0], knR: [100, 0, 0], anL: [35, 0, 0], anR: [35, 0, 0], shL: [0, 0, 6], shR: [0, 0, -6] };
-  const SUPL = { root: [-90, 0, 0], shL: [0, 0, 6], shR: [0, 0, -6], anL: [-15, 0, 0], anR: [-15, 0, 0] };
+  const SUP = { root: [-90, 0, 0], hpL: [-45, 0, 0], hpR: [-45, 0, 0], knL: [100, 0, 0], knR: [100, 0, 0], anL: [56, 0, 0], anR: [56, 0, 0], shL: [10, 0, 6], shR: [10, 0, -6] }; // spalle 10: braccia appoggiate a terra; caviglie 56: piante dei piedi appoggiate (con 35 i piedi restavano 5 cm sopra il tappetino)
+  const SUPL = { root: [-90, 0, 0], shL: [10, 0, 6], shR: [10, 0, -6], hpL: [7, 0, 0], hpR: [7, 0, 0], anL: [-15, 0, 0], anR: [-15, 0, 0] }; // gambe e braccia appoggiate a terra
   const EQ_TOE = 40; // alzata sui talloni: rotazione della caviglia
   const HANDS_HIPS = { shL: [0, 0, 35], elL: [-95, 0, 0], shR: [0, 0, -35], elR: [-95, 0, 0] };
   const N = {
@@ -64,10 +64,25 @@ const FIG3D = (() => {
     E3: { cam: [12, 8], an: "anR", K: [
       { ...HANDS_HIPS, hpL: [-8, 0, 0], hpR: [-8, 0, 0], knL: [14, 0, 0], knR: [14, 0, 0] },
       { ...HANDS_HIPS, hpL: [-8, 0, 24], hpR: [-8, 0, -4], knL: [14, 0, 0], knR: [14, 0, 0] }] },
-    E4: { cam: [35, 25], K: [SUP, { ...SUP, root: [-93, 0, 0], spine: [-2, 0, 0] }] },
+    E4: { cam: [35, 25], K: [SUP, { ...SUP, root: [-92, 0, 0], spine: [2, 0, 0], anL: [70, 0, 0], anR: [70, 0, 0] }] }, // bacino che bascula appena: spalle e piedi fermi a terra
+    // Pose rifatte il 20/10 (controllo anatomico, tools/check_pose.cjs): nel 2D convertito ginocchia o gomiti si piegavano al contrario.
+    // Angoli trovati con tools/pose_lab.cjs: mani e piedi a terra, caviglia sul ginocchio, mani sulle costole.
+    R1: { cam: [35, 25], K: [
+      { ...SUP, shL: [30, -46, 2], elL: [-125, 0, 0], shR: [30, 45, -2], elR: [-125, 0, 0] },
+      { ...SUP, shL: [38, -43, 8], elL: [-127, 0, 0], shR: [39, 46, -7], elR: [-127, 0, 0], spine: [2, 0, 0] }] },
+    Y2: { cam: [70, 14], an: "haL", K: [
+      { root: [125, 0, 0], neck: [-15, 0, 0], shL: [-145, 0, 0], shR: [-145, 0, 0], elL: [-3, 0, 0], elR: [-3, 0, 0], hpL: [-109, 0, 0], hpR: [-109, 0, 0], knL: [30, 0, 0], knR: [30, 0, 0], anL: [20, 0, 0], anR: [20, 0, 0] },
+      { root: [125, 0, 0], neck: [-15, 0, 0], shL: [-145, 0, 0], shR: [-145, 0, 0], elL: [-3, 0, 0], elR: [-3, 0, 0], hpL: [-101, 0, 0], hpR: [-118, 0, 0], knL: [12, 0, 0], knR: [50, 0, 0], anL: [-1, 0, 0], anR: [10, 0, 0] }] },
+    Y3: { cam: [35, 25], K: [
+      { root: [-90, 0, 0], neck: [-25, 0, 0], hpL: [-80, 0, 0], knL: [85, 0, 0], anL: [10, 0, 0], hpR: [-164, 56, -80], knR: [115, 0, 0], shL: [-21, 25, -14], elL: [-11, 0, 0], shR: [-32, 11, 9], elR: [0, 0, 0] },
+      { root: [-90, 0, 0], spine: [-10, 0, 0], neck: [-15, 0, 0], hpL: [-105, 0, 0], knL: [85, 0, 0], anL: [10, 0, 0], hpR: [-181, 55, -69], knR: [115, 0, 0], shL: [-20, 20, -14], elL: [-24, 0, 0], shR: [-24, 37, -5], elR: [-30, 0, 0] }] },
+    // Posizione del bambino col cuscino: tibie e piedi a terra, ginocchia ~140° (prima 165°, piedi e mani sollevati da terra)
+    Y1: { cam: [70, 14], pr: [{ type: "cushion", dy: -12, dx: -6 }], K: [
+      { root: [110, 0, 0], spine: [-8, 0, 0], hpL: [-153, 0, 20], hpR: [-153, 0, -20], knL: [141, 0, 0], knR: [140, 0, 0], anL: [44, 0, 0], anR: [47, 0, 0], shL: [-168, 0, 10], shR: [-169, 0, -10], elL: [-5, 0, 0], elR: [-5, 0, 0] },
+      { root: [110, 0, 0], spine: [-12, 0, 0], hpL: [-153, 0, 20], hpR: [-153, 0, -20], knL: [141, 0, 0], knR: [140, 0, 0], anL: [45, 0, 0], anR: [49, 0, 0], shL: [-167, 0, 10], shR: [-168, 0, -10], elL: [-5, 0, 0], elR: [-5, 0, 0] }] },
     Y5: { cam: [20, 40], K: [
-      { ...SUPL, shL: [0, 0, 85], shR: [0, 0, -85], hpR: [-75, 0, 0], knR: [95, 0, 0] },
-      { ...SUPL, root: [-90, -28, 0], shL: [0, 0, 85], shR: [0, 0, -85], hpR: [-75, -45, 0], knR: [95, 0, 0], neck: [0, 30, 0] }] }
+      { ...SUPL, shL: [0, 12, 85], shR: [0, -12, -85], hpR: [-75, 0, 0], knR: [95, 0, 0] },
+      { ...SUPL, root: [-90, -28, 0], spine: [0, 28, 0], shL: [0, 12, 85], shR: [0, -12, -85], hpR: [-75, -45, 0], knR: [95, 0, 0], neck: [0, 30, 0] }] }, // ruota il bacino, le spalle restano a terra
   };
   // Correzioni sulle pose convertite: punto fermo
   const EXTRA = {

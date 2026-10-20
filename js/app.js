@@ -3,8 +3,8 @@
   const P = PROGRAM;
   const KEY = "muoviamoci-v1";
   const DEF = {
-    settings: { yoga: 3, focus: [], intensity: "normale", minutes: 45, guide: "completa", volume: 1, reminder: "17:30" },
-    excluded: [], knee: [], tweak: {}, done: {}, moves: {}, skipped: {}, offlineReady: false, votes: [], plans: [], history: [], checksSeen: [],
+    settings: { yoga: 3, focus: [], intensity: "normale", minutes: 45, guide: "completa", volume: 1, reminder: "17:30", restExtra: 0 },
+    excluded: [], knee: [], tweak: {}, restBonus: {}, restUse: {}, done: {}, moves: {}, skipped: {}, offlineReady: false, votes: [], plans: [], history: [], checksSeen: [],
     name: "", welcomed: false, look: {}, prog: { A: 0, B: 0 }, progMark: { A: -1, B: -1 }, tests: [], testSnooze: "", cards: [], mirror: null
   };
   let S;
@@ -77,7 +77,7 @@
     if (S.history.some(h => h.date >= P.addDays(t, -10))) return null;
     return sessions().find(s => !s.done && !S.skipped[s.k] && s.date < P.addDays(t, -2)) || null;
   }
-  function stFor() { return { ...S.settings, excluded: S.excluded, knee: S.knee, tweak: S.tweak, prog: S.prog }; }
+  function stFor() { return { ...S.settings, excluded: S.excluded, knee: S.knee, tweak: S.tweak, prog: S.prog, restBonus: S.restBonus }; }
   const sessTitle = s => s.type === "P" ? s.name : `Seduta ${s.type} · ${P.TITLE[s.type]}`;
   const weekLabel = s => s.week === "F" ? "Settimana delle feste" : `Settimana ${s.week} · ${P.WEEK[s.week].n}`;
 
@@ -120,7 +120,7 @@
     const km = tripKm(), next = VIAGGIO.STOPS.find(x => x.km > km);
     const tripCard = `<button class="card trip-card" id="trip" aria-label="Il tuo viaggio sul Tōkaidō"><div class="between"><span class="lbl">${I.fuji}Il tuo viaggio · <span class="jp">東海道</span></span><span class="muted num">${km} / ${VIAGGIO.TOT} km</span></div>${VIAGGIO.map(km)}<div class="trip-row">${VIAGGIO.card(VIAGGIO.STOPS.indexOf(VIAGGIO.reached(km).slice(-1)[0]))}<span class="muted">${next ? `Prossima cartolina: <b>${esc(next.n)}</b> fra ${next.km - km} km (circa ${Math.ceil((next.km - km) / VIAGGIO.KM_MIN)} minuti di allenamento)` : "Sei arrivata a Kyoto! Tocca per rivedere le cartoline."}</span></div></button>`;
     const testDue = testIsDue() && S.testSnooze !== t;
-    const stSum = `${st.intensity[0].toUpperCase() + st.intensity.slice(1)} · ${st.minutes} min · ${["solo yoga", "più yoga", "metà e metà", "più forza", "solo forza"][st.yoga]}${st.focus.length ? " · " + st.focus.map(k => FOCUS.find(f => f[0] === k)[1]).join(", ") : ""}`;
+    const stSum = `${st.intensity[0].toUpperCase() + st.intensity.slice(1)} · ${st.minutes} min · ${["solo yoga", "più yoga", "metà e metà", "più forza", "solo forza"][st.yoga]}${st.restExtra ? ` · recupero +${st.restExtra} s` : ""}${st.focus.length ? " · " + st.focus.map(k => FOCUS.find(f => f[0] === k)[1]).join(", ") : ""}`;
     const prevList = s ? previewList(P.build(s, stFor())) : "";
     app.innerHTML = `<main class="screen">
       <div class="top"><div><div class="brand">${I.torii}Muoviamoci!</div><span class="muted">${hello}${S.name ? ", " + esc(S.name) : ""}! ${esc(P.fmt(t, true))}</span></div>
@@ -137,6 +137,7 @@
         <div><span class="lbl">Insisti su</span><div class="chips" id="focus" style="margin-top:6px">${FOCUS.map(([k, n]) => `<button class="chip" data-f="${k}" aria-pressed="${st.focus.includes(k)}">${n}</button>`).join("")}</div></div>
         <div><span class="lbl">Intensità</span><div class="seg" id="intensity" style="margin-top:6px">${["leggera", "normale", "sfidante"].map(k => `<button data-v="${k}" aria-pressed="${st.intensity === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div></div>
         <div><span class="lbl">Durata massima</span><div class="seg" id="minutes" style="margin-top:6px">${[20, 30, 45].map(k => `<button data-v="${k}" aria-pressed="${st.minutes === k}">${k} min</button>`).join("")}</div></div>
+        <div><span class="lbl">Recupero per prepararsi</span><div class="seg" id="restx" style="margin-top:6px">${[[0, "Normale"], [10, "+10 s"], [20, "+20 s"]].map(([k, n]) => `<button data-v="${k}" aria-pressed="${(st.restExtra || 0) === k}">${n}</button>`).join("")}</div><span class="muted" style="font-size:.85rem">Più tempo fra un esercizio e l'altro; gli esercizi restano gli stessi.</span></div>
       </details>
       ${tripCard}
     </main>`;
@@ -153,6 +154,7 @@
     $("#focus").onclick = e => { const b = e.target.closest("button"); if (!b) return; const k = b.dataset.f; st.focus = st.focus.includes(k) ? st.focus.filter(x => x !== k) : [...st.focus, k]; save(); renderOggi(); };
     $("#intensity").onclick = e => { const b = e.target.closest("button"); if (!b) return; st.intensity = b.dataset.v; save(); renderOggi(); };
     $("#minutes").onclick = e => { const b = e.target.closest("button"); if (!b) return; st.minutes = +b.dataset.v; save(); renderOggi(); };
+    $("#restx").onclick = e => { const b = e.target.closest("button"); if (!b) return; st.restExtra = +b.dataset.v; save(); renderOggi(); };
     app.querySelectorAll("[data-gotab]").forEach(b => b.onclick = () => go(b.dataset.gotab));
     app.querySelectorAll("[data-seen]").forEach(b => b.onclick = () => { S.checksSeen.push(b.dataset.seen); save(); renderOggi(); });
   }
@@ -359,7 +361,7 @@
         <textarea id="out" hidden readonly style="width:100%;min-height:160px;font:inherit;font-size:.85rem;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px"></textarea></section>
       <section class="card"><h3>Pollici per esercizio</h3>
         ${Object.keys(vs).length ? `<div class="list">${Object.entries(vs).sort((a, b) => b[1].down - a[1].down).map(([id, x]) => `<div class="item"><span class="sw" style="background:var(--z-${BY[id].z})"></span><div class="grow"><b>${esc(BY[id].n)}</b><span class="muted">${Object.entries(x.r).map(([k, n]) => `${REASONS.find(r => r[0] === k)[1]} ×${n}`).join(" · ")}</span></div><span class="pill ok">${x.up} su</span><span class="pill" style="background:var(--no-bg);color:var(--no)">${x.down} giù</span></div>`).join("")}</div>` : '<p class="muted">Dopo ogni esercizio, durante il recupero, tocca il pollice verde o rosso. Qui vedrai il riepilogo.</p>'}
-        ${S.knee.length || S.excluded.length || Object.keys(S.tweak).length ? `<p class="muted">Modifiche automatiche: ${[...S.knee.map(id => BY[id].n + " (ginocchio)"), ...S.excluded.map(id => BY[id].n + " (escluso)"), ...Object.entries(S.tweak).map(([id, v]) => `${BY[id].n} (${v > 0 ? "+" : ""}${v}")`)].map(esc).join(", ")}</p><button class="btn small ghost" id="resetauto">Annulla le modifiche automatiche</button>` : ""}
+        ${S.knee.length || S.excluded.length || Object.keys(S.tweak).length || Object.keys(S.restBonus).length ? `<p class="muted">Modifiche automatiche: ${[...S.knee.map(id => BY[id].n + " (ginocchio)"), ...S.excluded.map(id => BY[id].n + " (escluso)"), ...Object.entries(S.tweak).map(([id, v]) => `${BY[id].n} (${v > 0 ? "+" : ""}${v}")`), ...Object.entries(S.restBonus).map(([id, v]) => `${BY[id].n} (recupero +${v}")`)].map(esc).join(", ")}</p><button class="btn small ghost" id="resetauto">Annulla le modifiche automatiche</button>` : ""}
       </section>
       <section class="card"><h3>Sedute fatte</h3>${S.history.length ? `<div class="list">${S.history.slice().reverse().map(h => `<div class="between"><span>${esc(P.fmt(h.date))} · ${esc(h.title)}</span><span class="muted num">${h.min} min · ${esc(h.rating || "")}</span></div>`).join("")}</div>` : '<p class="muted">Ancora nessuna.</p>'}</section>
       <section class="card"><h3>App</h3><p class="muted">Versione: <b id="ver">…</b></p><p class="muted" id="updmsg" hidden></p>
@@ -375,7 +377,7 @@
       try { navigator.clipboard.writeText(txt).then(() => toast("Riepilogo copiato: incollalo nella chat con Claude"), fb); } catch (e) { fb(); }
     };
     app.querySelectorAll("[data-repl]").forEach(b => b.onclick = () => { S.excluded.push(b.dataset.repl); save(); toast("Sostituito con un esercizio equivalente"); renderProg(); });
-    const ra = $("#resetauto"); if (ra) ra.onclick = () => { S.knee = []; S.excluded = []; S.tweak = {}; save(); renderProg(); };
+    const ra = $("#resetauto"); if (ra) ra.onclick = () => { S.knee = []; S.excluded = []; S.tweak = {}; S.restBonus = {}; S.restUse = {}; save(); renderProg(); };
     showVersion();
     $("#chkupd").onclick = checkUpdate;
     $("#exp").onclick = () => saveFile(`muoviamoci-copia-${P.today()}.json`, JSON.stringify(S, null, 1), "application/json");
@@ -389,6 +391,7 @@
     L.push(`Sedute fatte: ${S.history.length}`);
     S.history.forEach(h => L.push(`- ${h.date} ${h.title}: ${h.min} min, giudizio: ${h.rating || "-"}`));
     L.push("", "Regolazioni: " + JSON.stringify(S.settings));
+    if (Object.keys(S.restBonus).length) L.push("Recupero allungato da sola (+15 s usato più volte): " + Object.entries(S.restBonus).map(([id, v]) => `${BY[id].n} +${v}"`).join(", "));
     L.push(`Progressione automatica: A ${S.prog.A >= 0 ? "+" : ""}${S.prog.A}", B ${S.prog.B >= 0 ? "+" : ""}${S.prog.B}" di lavoro · settimane complete di fila: ${weekStreak()} · viaggio: ${tripKm()} km`);
     L.push("", "MINI-TEST (sedia = alzate in 30\", plank e equilibrio = secondi)");
     S.tests.forEach(r => L.push(`- ${r.date}: sedia ${r.sedia ?? "-"}, plank ${r.plank ?? "-"}, equilibrio ${r.equi ?? "-"}`));
@@ -595,11 +598,12 @@
 
   // ---------- LETTORE DELLA SEDUTA ----------
   function startSession(s) { runPlayer(P.build(s, stFor()), { title: sessTitle(s), planned: s }); }
-  function startPlan(p) { runPlayer(P.fromPlan(p), { title: p.name }); }
+  function startPlan(p) { runPlayer({ ...P.fromPlan(p), restExtra: S.settings.restExtra || 0, restBonus: S.restBonus }, { title: p.name }); }
 
   function runPlayer(sess, meta) {
     VOICE.unlock(); VOICE.setVolume(S.settings.volume);
-    const steps = P.steps(sess), total = P.totalSec(steps), guide = S.settings.guide;
+    const steps = P.steps(sess), guide = S.settings.guide;
+    let total = P.totalSec(steps);
     const el = document.createElement("div"); el.className = "player is-intro"; el.setAttribute("role", "region"); el.setAttribute("aria-label", "Seduta in corso");
     el.innerHTML = `<div class="p-top"><button class="icon" id="pclose" aria-label="Esci dalla seduta">${I.x}</button>
         <div class="grow"><div class="between"><b id="pblock"></b><span class="muted num" id="pleft"></span></div><div class="p-prog"><i id="pbar"></i></div></div></div>
@@ -608,6 +612,7 @@
         <div class="ring"><svg viewBox="0 0 100 100"><circle class="bgc" cx="50" cy="50" r="44"/><circle class="fgc" id="pring" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="0"/></svg><span id="ptime">0</span></div></div>
       <div id="pvote"></div>
       <p class="caption" id="pcap" aria-live="polite"></p>
+      <button class="btn p-more" id="pmore" hidden>+15 s per prepararmi</button>
       <div class="p-ctrl"><button class="btn" id="pprev" aria-label="Indietro">${I.prev}</button><button class="btn primary" id="ppause" aria-label="Pausa">${I.pause}</button><button class="btn" id="pnextb" aria-label="Avanti">${I.next}</button></div>`;
     document.body.appendChild(el);
     document.body.style.overflow = "hidden";
@@ -699,6 +704,7 @@
       const after = st.kind === "work" ? nextWork(i + 1) : null;
       q("pnext").textContent = after ? "Poi: " + after.ex.n : st.kind === "rest" && nw ? (st.first ? `${nw.dur}" di lavoro` : "Cambia lato") : "";
       q("pcap").textContent = "";
+      q("pmore").hidden = st.kind !== "rest";
       // Pollice per l'esercizio appena finito
       const v = q("pvote");
       if (st.kind === "rest" && st.first && lastWork && st.dur >= 8) voteBox(v, lastWork.ex); else v.innerHTML = "";
@@ -784,6 +790,15 @@
       if (paused) { VOICE.pauseAll(); if (fig) fig.paused = true; } else { VOICE.resumeAll(); if (fig) fig.paused = false; }
     };
     q("pnextb").onclick = () => enter(idx + 1);
+    // «+15 s»: più tempo per prepararsi a questo esercizio. Usato in 2 sedute diverse → la volta dopo il recupero è già più lungo (max +30")
+    q("pmore").onclick = () => {
+      const st = steps[idx]; if (!st || st.kind !== "rest") return;
+      st.dur += 15; total += 15;
+      cues = buildCues(st); fired = new Set(cues.filter(c => c.t <= t));
+      const id = st.ex.id, u = S.restUse[id] = (S.restUse[id] || []).filter(x => x !== sid).concat(sid);
+      if (u.length >= 2 && (S.restBonus[id] || 0) < 30) { S.restBonus[id] = (S.restBonus[id] || 0) + 15; S.restUse[id] = []; toast(`Imparato: da ora ${S.restBonus[id]}" in più prima di «${st.ex.n}»`); }
+      save(); draw();
+    };
     q("pprev").onclick = () => { if (t > 3) enter(idx); else { let k = idx - 1; while (k > 0 && steps[k].kind !== "work") k--; enter(Math.max(0, k - 1)); } };
     q("pclose").onclick = playerBack = () => {
       if (finished) { el.querySelector("#fsave").click(); return; }

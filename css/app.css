@@ -167,6 +167,7 @@ details.fold[open] > summary::after { content: "–"; }
 .caption { min-height: 2.8em; font-size: .95rem; color: var(--muted); font-style: italic; }
 .p-ctrl { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 10px; }
 .p-ctrl .btn { min-height: 56px; }
+.p-more { width: 100%; min-height: 52px; font-size: 1.05rem; background: var(--surface); border: 2px solid var(--phase, var(--accent)); color: var(--ink); }
 .thumbs { display: flex; gap: 14px; justify-content: center; align-items: center; }
 .thumb { width: 64px; height: 64px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; }
 .thumb svg { width: 30px; height: 30px; }

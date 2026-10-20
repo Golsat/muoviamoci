@@ -131,11 +131,13 @@ const PROGRAM = (() => {
       const r = replacement(id, used(), { ...st, kneeStrict: st.knee.includes(id) }, s.block);
       return r + (sx ? " x2" : "");
     });
-    const sess = { s, blocks: T.map(b => ({ ...b, giri: b.k === "forza" ? (b.giri || giri) : 1 })), work, rest, tweak: st.tweak || {} };
+    // restExtra: recupero in più scelto da lei (0/10/20"); restBonus: secondi in più imparati per esercizio (pulsante «+15 s»)
+    const sess = { s, blocks: T.map(b => ({ ...b, giri: b.k === "forza" ? (b.giri || giri) : 1 })), work, rest, tweak: st.tweak || {}, restExtra: st.restExtra || 0, restBonus: st.restBonus || {} };
     // Durata massima rispettata davvero: si accorcia prima l'allungamento, poi il riscaldamento,
-    // poi il finale, poi un giro di circuito, poi l'ultimo esercizio dei circuiti
-    const cap = (st.minutes || 45) * 60 + 30;
-    for (let guard = 0; guard < 30 && totalSec(steps(sess)) > cap; guard++) {
+    // poi il finale, poi un giro di circuito, poi l'ultimo esercizio dei circuiti.
+    // Il recupero in più chiesto da lei non conta: serve a prepararsi, non deve togliere esercizi
+    const cap = (st.minutes || 45) * 60 + 30, net = x => totalSec(x) - x.reduce((a, y) => a + (y.plus || 0), 0);
+    for (let guard = 0; guard < 30 && net(steps(sess)) > cap; guard++) {
       const B = sess.blocks, str = B.find(b => b.k === "allung" || b.k === "yoga"), risc = B.find(b => b.k === "risc"), fin = B.findIndex(b => b.k === "finale");
       const two = B.filter(b => b.k === "forza" && b.giri > 1).pop(), long = B.filter(b => b.k === "forza" && b.items.length > (st.minutes <= 20 ? 2 : 3)).pop();
       if (str && str.items.length > 3) str.items.splice(-2, 1);
@@ -168,10 +170,12 @@ const PROGRAM = (() => {
           let work = b.dur || (timed[b.k] ? (id === "Y8" ? 120 : timed[b.k]) : sess.work);
           if (cust && cust.work) work = cust.work;
           work = Math.max(15, work + (sess.tweak[id] || 0));
-          const rest = timed[b.k] ? 8 : (n === 0 ? 12 : sess.rest);
+          const plus = (timed[b.k] ? 0 : (sess.restExtra || 0)) + ((sess.restBonus || {})[id] || 0);
+          const rest = (timed[b.k] ? 8 : (n === 0 ? 12 : sess.rest)) + plus;
           const sides = sx ? ["dx", "sx"] : [null];
           sides.forEach((side, k) => {
-            out.push({ kind: "rest", block: b, ex: e, side, dur: k ? 6 : rest, first: k === 0, giro: g, slow: b.slow, n });
+            // Cambio lato: 10" (erano 6, poco per girarsi o spostare la sedia)
+            out.push({ kind: "rest", block: b, ex: e, side, dur: k ? 10 : rest, plus: k ? 0 : plus, first: k === 0, giro: g, slow: b.slow, n });
             out.push({ kind: "work", block: b, ex: e, side, dur: sx && timed[b.k] ? Math.round(work * 0.75) : work, giro: g, slow: b.slow, calm: !!timed[b.k], last: k === sides.length - 1 });
           });
         });
