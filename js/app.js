@@ -604,6 +604,16 @@
     VOICE.unlock(); VOICE.setVolume(S.settings.volume);
     const steps = P.steps(sess), guide = S.settings.guide;
     let total = P.totalSec(steps);
+    // Le presentazioni (benvenuto, inizio blocco) durano quanto la frase di Isabella: prima il conto
+    // arrivava a 1 e restava fermo finché la voce non finiva
+    if (guide !== "tempo") steps.forEach((st, i) => {
+      if (st.kind !== "intro" || !st.clip) return;
+      const files = (i === 0 ? ["g_benvenuta.mp3"] : []).concat(st.clip + ".mp3");
+      Promise.all(files.map(f => VOICE.durationOf(f))).then(ds => {
+        const need = Math.ceil(ds.reduce((a, b) => a + b, 0) + 1);
+        if (need > st.dur) { total += need - st.dur; st.dur = need; }
+      }).catch(() => { });
+    });
     const el = document.createElement("div"); el.className = "player is-intro"; el.setAttribute("role", "region"); el.setAttribute("aria-label", "Seduta in corso");
     el.innerHTML = `<div class="p-top"><button class="icon" id="pclose" aria-label="Esci dalla seduta">${I.x}</button>
         <div class="grow"><div class="between"><b id="pblock"></b><span class="muted num" id="pleft"></span></div><div class="p-prog"><i id="pbar"></i></div></div></div>

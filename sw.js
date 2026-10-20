@@ -1,6 +1,6 @@
-// Generato da tools/build_sw.mjs – versione d9dee478c4
-const BUILT = "20/10/2026 11:56";
-const CACHE = "muoviamoci-d9dee478c4";
+// Generato da tools/build_sw.mjs – versione 22cfbeee42
+const BUILT = "20/10/2026 12:06";
+const CACHE = "muoviamoci-22cfbeee42";
 const AUDIO = "muoviamoci-audio";
 const VISION = "muoviamoci-vision-1";
 const FILES = ["./","index.html","manifest.webmanifest","css/app.css","js/app.js","js/audio.js","js/clips.js","js/data.js","js/figures.js","js/figures3d.js","js/program.js","js/specchio.js","js/three.min.js","js/viaggio.js","fonts/bricolage.woff2","fonts/figtree.woff2","fonts/shippori.woff2","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png"];

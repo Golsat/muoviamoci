@@ -56,7 +56,8 @@ const VOICE = (() => {
     queue = [];
     if (cur) { const s = cur.src; cur = null; try { if (s) { s.onended = null; s.stop(); } } catch (e) { } }
   }
-  function busy() { return !!cur; }
+  // Occupata solo se l'audio sta davvero andando: con l'audio sospeso dal telefono la frase non finirebbe mai
+  function busy() { return !!cur && (!ctx || ctx.state === "running"); }
   // Bip per la modalità "solo tempo"
   function beep(freq = 880, ms = 140) {
     if (muted) return;
@@ -72,6 +73,7 @@ const VOICE = (() => {
   }
   return {
     say, stop, busy, beep, unlock,
+    durationOf: f => have.has(f) ? load(f).then(b => b.duration) : Promise.resolve(0),
     preload: files => files.forEach(f => { if (have.has(f)) load(f).catch(() => { }); }),
     setVolume: v => { volume = v; if (gain) gain.gain.value = v; },
     setMuted: m => { muted = m; if (m) stop(); },
