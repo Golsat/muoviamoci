@@ -1,10 +1,13 @@
 /* Muoviamoci! – app a schermo intero per telefono. Una colonna, barra di navigazione in basso. */
 @font-face { font-family: "Bricolage Grotesque"; src: url(../fonts/bricolage.woff2) format("woff2"); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: "Shippori Mincho"; src: url(../fonts/shippori.woff2) format("woff2"); font-weight: 800; font-display: swap; } /* solo i caratteri usati: titoli e kanji del viaggio */
 @font-face { font-family: "Figtree"; src: url(../fonts/figtree.woff2) format("woff2"); font-weight: 300 900; font-display: swap; }
 
 :root {
-  --bg: #F3F6F4; --surface: #FFFFFF; --surface-2: #EAF0ED; --ink: #1D2A2C; --muted: #5A686A; --line: #DAE2DE;
-  --accent: #2A6B65; --accent-ink: #FFFFFF; --accent-soft: #D7EBE7;
+  /* Stile giapponese (20/10/2026): carta di riso (washi), indaco (ai-iro), vermiglio dei torii (shu) */
+  --bg: #F2EFE7; --surface: #FFFDF8; --surface-2: #EAE5D8; --ink: #22262B; --muted: #5F625F; --line: #E2DCCD;
+  --accent: #1F4E79; --accent-ink: #FFFFFF; --accent-soft: #DCE6F0; --shu: #C8402C; --shu-ink: #FFFFFF;
+  --wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cg fill='%23F2EFE7' stroke='%231F4E79' stroke-opacity='.16' stroke-width='1.2'%3E%3Ccircle cx='20' cy='0' r='19'/%3E%3Ccircle cx='20' cy='0' r='13'/%3E%3Ccircle cx='20' cy='0' r='7'/%3E%3Ccircle cx='0' cy='10' r='19'/%3E%3Ccircle cx='0' cy='10' r='13'/%3E%3Ccircle cx='0' cy='10' r='7'/%3E%3Ccircle cx='40' cy='10' r='19'/%3E%3Ccircle cx='40' cy='10' r='13'/%3E%3Ccircle cx='40' cy='10' r='7'/%3E%3Ccircle cx='20' cy='20' r='19'/%3E%3Ccircle cx='20' cy='20' r='13'/%3E%3Ccircle cx='20' cy='20' r='7'/%3E%3C/g%3E%3C/svg%3E");
   --work: #E0533A; --work-soft: #FBE1DA; --rest: #2A6B65; --rest-soft: #D7EBE7;
   --ok: #2F7D4B; --ok-bg: #E1F2E6; --no: #B8392F; --no-bg: #FAE0DD; --warn: #A6620F; --warn-bg: #FFF0D9;
   --z-risc: #FFE6CC; --z-glu: #F8D5DE; --z-cos: #E4DAF6; --z-add: #D4EAF6; --z-bra: #D7EFDB; --z-yoga: #F2EBC4; --z-eq: #DCEFE8;
@@ -13,13 +16,15 @@
   --mat: #9FC3B8; --shadow: rgba(30,42,44,.12); --prop: #B9A98F; --bell: #2D6E68; --cushion: #E7A6B6; --hl: #FF6B3D; --arrow: #2A6B65; --outline: rgba(30,42,44,.28);
   --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --f-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-head: "Shippori Mincho", "Yu Mincho", "Hiragino Mincho ProN", Georgia, serif;
   --r: 16px; --nav-h: 64px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121A1B; --surface: #1B2526; --surface-2: #233031; --ink: #E7EFED; --muted: #9CABA9; --line: #2D3A3B;
-    --accent: #6CC1B6; --accent-ink: #0E1A1A; --accent-soft: #1F3A37;
+    --bg: #15181C; --surface: #1E2227; --surface-2: #272C32; --ink: #ECE8DF; --muted: #A7A399; --line: #33383E;
+    --accent: #8DB4DC; --accent-ink: #0F1A26; --accent-soft: #22344A; --shu: #E06A52; --shu-ink: #1A0E0B;
+    --wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cg fill='%2315181C' stroke='%238DB4DC' stroke-opacity='.14' stroke-width='1.2'%3E%3Ccircle cx='20' cy='0' r='19'/%3E%3Ccircle cx='20' cy='0' r='13'/%3E%3Ccircle cx='20' cy='0' r='7'/%3E%3Ccircle cx='0' cy='10' r='19'/%3E%3Ccircle cx='0' cy='10' r='13'/%3E%3Ccircle cx='0' cy='10' r='7'/%3E%3Ccircle cx='40' cy='10' r='19'/%3E%3Ccircle cx='40' cy='10' r='13'/%3E%3Ccircle cx='40' cy='10' r='7'/%3E%3Ccircle cx='20' cy='20' r='19'/%3E%3Ccircle cx='20' cy='20' r='13'/%3E%3Ccircle cx='20' cy='20' r='7'/%3E%3C/g%3E%3C/svg%3E");
     --work: #FF7A5E; --work-soft: #42261F; --rest: #6CC1B6; --rest-soft: #1F3A37;
     --ok: #7FD39A; --ok-bg: #1E3627; --no: #F2877D; --no-bg: #432422; --warn: #F0B565; --warn-bg: #3E3020;
     --z-risc: #4A3A27; --z-glu: #4B2D36; --z-cos: #3A3150; --z-add: #243E4C; --z-bra: #284331; --z-yoga: #454024; --z-eq: #213F37;
@@ -31,7 +36,7 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5; -webkit-tap-highlight-color: transparent; }
-h1, h2, h3 { font-family: var(--f-display); margin: 0; line-height: 1.15; text-wrap: balance; letter-spacing: -.01em; }
+h1, h2, h3 { font-family: var(--f-head); margin: 0; line-height: 1.2; text-wrap: balance; }
 h1 { font-size: 1.9rem; font-weight: 800; }
 h2 { font-size: 1.35rem; font-weight: 700; }
 h3 { font-size: 1.05rem; font-weight: 700; }
@@ -47,11 +52,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 #app { min-height: 100%; padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 12px); }
 .screen { max-width: 640px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 18px; }
 .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.brand { font-family: var(--f-display); font-weight: 800; font-size: 1.5rem; color: var(--accent); }
+.brand { font-family: var(--f-head); font-weight: 800; font-size: 1.5rem; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+.brand svg { width: 24px; height: 24px; flex: none; }
+/* Onde seigaiha (buon augurio) nella fascia in alto di «Oggi» */
+.screen > .top:first-child { margin: calc(-18px - env(safe-area-inset-top, 0px)) calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding: calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px)); background: var(--wave); border-bottom: 1px solid var(--line); }
+.ico { width: 15px; height: 15px; vertical-align: -2px; margin-right: 5px; }
 nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); }
 nav.tabs button { background: none; border: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .72rem; font-weight: 600; color: var(--muted); padding: 6px 2px; border-radius: 12px; cursor: pointer; }
 nav.tabs button svg { width: 24px; height: 24px; }
-nav.tabs button[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+nav.tabs button[aria-current="page"] { color: var(--accent); background: var(--accent-soft); position: relative; }
+nav.tabs button[aria-current="page"]::after { content: ""; position: absolute; top: 5px; right: calc(50% - 18px); width: 6px; height: 6px; border-radius: 50%; background: var(--shu); }
 
 /* Elementi comuni */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
@@ -63,7 +73,7 @@ nav.tabs button[aria-current="page"] { color: var(--accent); background: var(--a
 .btn svg { width: 22px; height: 22px; flex: none; }
 .btn.primary { background: var(--accent); color: var(--accent-ink); }
 .btn.big { font-size: 1.15rem; padding: 16px 22px; min-height: 58px; width: 100%; }
-.hero .btn.primary { background: var(--accent-ink); color: var(--accent); }
+.hero .btn.primary { background: var(--shu); color: var(--shu-ink); }
 .btn.ghost { background: transparent; border: 1px solid var(--line); }
 .btn.small { min-height: 38px; padding: 8px 12px; font-size: .9rem; }
 .btn.danger { background: var(--no-bg); color: var(--no); }
@@ -110,14 +120,15 @@ details.fold[open] > summary::after { content: "–"; }
 .day.s-R { background: var(--cal-r); color: var(--ink); }
 .day small { font-size: .62rem; font-weight: 800; line-height: 1; }
 .day.today { outline: 2px solid var(--accent); outline-offset: -2px; }
-.day.done::after { content: "✓"; position: absolute; top: 1px; right: 4px; font-size: .7rem; color: var(--ok); font-weight: 900; }
+/* Seduta fatta: timbro rosso 済 (sumi, «fatto») come i timbri delle stazioni del Tōkaidō */
+.day.done::after { content: "済"; position: absolute; top: 1px; right: 1px; width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid var(--shu); color: var(--shu); font: 800 .62rem/14px var(--f-head); text-align: center; transform: rotate(-10deg); background: var(--surface); }
 .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: .82rem; color: var(--muted); }
 .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 5px; vertical-align: -1px; }
 
 /* Schede esercizio */
 .ex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .ex-tile { border: 0; border-radius: 14px; padding: 12px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px; min-height: 92px; color: var(--ink); }
-.ex-tile b { font-family: var(--f-display); font-size: 1rem; line-height: 1.2; }
+.ex-tile b { font-family: var(--f-head); font-size: 1rem; line-height: 1.2; }
 .ex-tile small { color: var(--muted); font-weight: 600; font-size: .78rem; }
 .ex-tile .flags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: auto; }
 .stage { width: 100%; aspect-ratio: 23/16; border-radius: var(--r); overflow: hidden; position: relative; }
@@ -243,7 +254,7 @@ details.fold[open] > summary::after { content: "–"; }
 
 /* Lettore leggibile da lontano: tutto lo sfondo prende il colore della fase, timer grande */
 .player { background: var(--phase-soft, var(--bg)); transition: background .4s; }
-.player.is-party { background: var(--bg); }
+.player.is-party { background: var(--wave); } /* festa finale: onde seigaiha */
 .p-phase { font-size: 1.05rem; padding: 6px 14px; }
 .ring { width: 150px; height: 150px; }
 .ring circle { stroke-width: 10; }
@@ -252,3 +263,9 @@ details.fold[open] > summary::after { content: "–"; }
 
 /* Avviso nuova versione */
 .upd { position: fixed; left: 50%; transform: translateX(-50%); top: calc(10px + env(safe-area-inset-top, 0px)); z-index: 70; border: 0; border-radius: 999px; padding: 10px 18px; font: inherit; font-weight: 700; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(0,0,0,.25); cursor: pointer; }
+
+/* Cartolina dell'ultima tappa nella scheda del viaggio di «Oggi» */
+.trip-row { display: flex; gap: 12px; align-items: center; }
+.trip-row .pc { width: 96px; height: auto; flex: none; border-radius: 6px; }
+.trip-row > span { min-width: 0; }
+.jp { font-family: var(--f-head); }

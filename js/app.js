@@ -23,6 +23,10 @@
   const REASONS = [["difficile", "Troppo difficile"], ["facile", "Troppo facile"], ["ginocchio", "Fastidio al ginocchio"], ["nonpiace", "Non mi piace / poco chiaro"]];
 
   const I = {
+    // Icone giapponesi (stile «medio», 20/10/2026): torii, onde, monte Fuji
+    torii: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--shu)" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 6c6 1 12 1 18 0M5 10h14M7 6v15M17 6v15"/></svg>',
+    wave: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 16c3-3 5-3 7 0s5 3 7 0 4-3 6-1"/><path d="M2 20c3-3 5-3 7 0s5 3 7 0 4-3 6-1"/></svg>',
+    fuji: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M2 20l7-12 3 4 2-3 8 11z"/><path d="M7.5 10.5l1.5 1 1.5-1"/></svg>',
     today: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><path d="M12 8v6M8 21l4-7 4 7M6 11l6-2 6 2"/></svg>',
     cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
     lib: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>',
@@ -103,7 +107,7 @@
       const sess = P.build(s, stFor()), steps = P.steps(sess), when = s.date === t ? "Oggi" : s.date < t ? "Da recuperare" : "Prossima seduta";
       const late = s.date < t;
       hero = `<section class="card hero" aria-label="Seduta">
-        <div class="between"><span class="lbl">${when} · ${esc(P.fmt(s.date, true))}</span><span class="pill ${s.type.toLowerCase()}">${s.type}</span></div>
+        <div class="between"><span class="lbl">${I.wave}${when} · ${esc(P.fmt(s.date, true))}</span><span class="pill ${s.type.toLowerCase()}">${s.type}</span></div>
         <h2>${esc(P.TITLE[s.type])}</h2>
         <div class="session-meta"><span>${esc(P.blockName(s.block))}</span><span>${esc(weekLabel(s))}</span>${s.note ? `<span>${esc(s.note)}</span>` : ""}</div>
         <div class="between"><div><div class="est num">${mins(P.totalSec(steps))}<small style="font-size:1rem"> min</small></div><span class="muted">${new Set(steps.filter(x => x.kind === "work").map(x => x.ex.id)).size} esercizi · ${sess.work}" lavoro / ${sess.rest}" recupero${S.prog[s.type] > 0 ? ` · +${S.prog[s.type]}" per i tuoi progressi` : ""}</span></div></div>
@@ -114,12 +118,12 @@
 
     const chk = P.CHECKS.find(c => c.date <= t && !S.checksSeen.includes(c.date));
     const km = tripKm(), next = VIAGGIO.STOPS.find(x => x.km > km);
-    const tripCard = `<button class="card trip-card" id="trip" aria-label="Il tuo viaggio sul Tōkaidō"><div class="between"><span class="lbl">Il tuo viaggio · 東海道</span><span class="muted num">${km} / ${VIAGGIO.TOT} km</span></div>${VIAGGIO.map(km)}<span class="muted">${next ? `Prossima cartolina: <b>${esc(next.n)}</b> fra ${next.km - km} km (circa ${Math.ceil((next.km - km) / VIAGGIO.KM_MIN)} minuti di allenamento)` : "Sei arrivata a Kyoto! Tocca per rivedere le cartoline."}</span></button>`;
+    const tripCard = `<button class="card trip-card" id="trip" aria-label="Il tuo viaggio sul Tōkaidō"><div class="between"><span class="lbl">${I.fuji}Il tuo viaggio · <span class="jp">東海道</span></span><span class="muted num">${km} / ${VIAGGIO.TOT} km</span></div>${VIAGGIO.map(km)}<div class="trip-row">${VIAGGIO.card(VIAGGIO.STOPS.indexOf(VIAGGIO.reached(km).slice(-1)[0]))}<span class="muted">${next ? `Prossima cartolina: <b>${esc(next.n)}</b> fra ${next.km - km} km (circa ${Math.ceil((next.km - km) / VIAGGIO.KM_MIN)} minuti di allenamento)` : "Sei arrivata a Kyoto! Tocca per rivedere le cartoline."}</span></div></button>`;
     const testDue = testIsDue() && S.testSnooze !== t;
     const stSum = `${st.intensity[0].toUpperCase() + st.intensity.slice(1)} · ${st.minutes} min · ${["solo yoga", "più yoga", "metà e metà", "più forza", "solo forza"][st.yoga]}${st.focus.length ? " · " + st.focus.map(k => FOCUS.find(f => f[0] === k)[1]).join(", ") : ""}`;
     const prevList = s ? previewList(P.build(s, stFor())) : "";
     app.innerHTML = `<main class="screen">
-      <div class="top"><div><div class="brand">Muoviamoci!</div><span class="muted">${hello}${S.name ? ", " + esc(S.name) : ""}! ${esc(P.fmt(t, true))}</span></div>
+      <div class="top"><div><div class="brand">${I.torii}Muoviamoci!</div><span class="muted">${hello}${S.name ? ", " + esc(S.name) : ""}! ${esc(P.fmt(t, true))}</span></div>
         <button class="icon" id="settings" aria-label="Impostazioni">${I.gear}</button></div>
       ${chk ? `<section class="card" style="border-color:var(--accent)"><span class="lbl">${esc(chk.n)} con Claude</span><p>${esc(chk.t)} Apri <b>Progressi</b> e premi «Copia il riepilogo per Claude».</p><div class="row"><button class="btn small primary" data-gotab="progressi">Vai a Progressi</button><button class="btn small ghost" data-seen="${chk.date}">Fatto</button></div></section>` : ""}
       ${testDue ? `<section class="card" style="border-color:var(--accent)"><span class="lbl">${S.tests.length ? "Mini-test di fine blocco" : "Mini-test di partenza"}</span><p>${S.tests.length ? "Rifai le 3 prove: vedrai quanto sei migliorata." : "3 prove semplici, 5 minuti: servono a vedere i tuoi progressi nelle prossime settimane."}</p><div class="row"><button class="btn small primary" id="dotest">Fai il mini-test</button><button class="btn small ghost" id="snooze">Più tardi</button></div></section>` : ""}
