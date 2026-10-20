@@ -125,7 +125,8 @@ const FIG3D = (() => {
     M.deltHl = hl.includes("shoulder") ? m(LK.top) : M.top;
     M.armHl = hl.includes("arm") ? m(LK.skin, 0.55) : M.skin;
     M.glow = [M.gluteHl, M.thighHl, M.torsoHl, M.deltHl, M.armHl].filter(x => x !== M.leg && x !== M.top && x !== M.skin);
-    M.style = LK.style || "chignon";
+    M.body = LK.body === "uomo" ? "uomo" : "donna";
+    M.style = LK.style || (M.body === "uomo" ? "corti" : "chignon");
     return M;
   }
   function seg(parent, len, r1, r2, mat) {
@@ -140,35 +141,43 @@ const FIG3D = (() => {
   const grp = (parent, pos) => { const g = new THREE.Group(); g.rotation.order = "YXZ"; if (pos) g.position.set(...pos); if (parent) parent.add(g); return g; };
 
   function body(M, bells) {
-    const J = {};
+    const J = {}, man = M.body === "uomo";
+    // Uomo (scelta nel benvenuto): spalle più larghe, fianchi più stretti, braccia e collo più robusti
+    const SH = man ? 0.19 : 0.165, AR = man ? 1.12 : 1;
     J.root = grp(null); J.root.rotation.order = "XYZ";
-    ball(J.root, 0.078, M.gluteHl, [0.062, -0.035, -0.055]); ball(J.root, 0.078, M.gluteHl, [-0.062, -0.035, -0.055]);
-    ball(J.root, 1, M.leg, [0, 0, 0], [0.15, 0.1, 0.11]);
+    const gl = man ? 0.07 : 0.078;
+    ball(J.root, gl, M.gluteHl, [0.058, -0.035, -0.05]); ball(J.root, gl, M.gluteHl, [-0.058, -0.035, -0.05]);
+    ball(J.root, 1, M.leg, [0, 0, 0], man ? [0.135, 0.1, 0.105] : [0.15, 0.1, 0.11]);
     J.spine = grp(J.root, [0, 0.04, 0]);
-    const lathe = new THREE.LatheGeometry([[0.001, 0], [0.122, 0.0], [0.112, 0.12], [0.13, 0.28], [0.135, 0.38], [0.1, 0.47], [0.001, 0.5]].map(p => new THREE.Vector2(p[0], p[1])), 28);
-    const torso = new THREE.Mesh(lathe, M.torsoHl); torso.scale.z = 0.68; J.spine.add(torso);
+    const prof = man ? [[0.001, 0], [0.11, 0.0], [0.108, 0.12], [0.138, 0.28], [0.155, 0.38], [0.12, 0.47], [0.001, 0.5]]
+      : [[0.001, 0], [0.122, 0.0], [0.112, 0.12], [0.13, 0.28], [0.135, 0.38], [0.1, 0.47], [0.001, 0.5]];
+    const lathe = new THREE.LatheGeometry(prof.map(p => new THREE.Vector2(p[0], p[1])), 28);
+    const torso = new THREE.Mesh(lathe, M.torsoHl); torso.scale.z = man ? 0.7 : 0.68; J.spine.add(torso);
     J.neck = grp(J.spine, [0, 0.48, 0]);
-    const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.042, 0.09, 16), M.skin); nk.position.y = 0.04; J.neck.add(nk);
+    const nk = new THREE.Mesh(new THREE.CylinderGeometry(man ? 0.046 : 0.038, man ? 0.052 : 0.042, 0.09, 16), M.skin); nk.position.y = 0.04; J.neck.add(nk);
     ball(J.neck, 0.105, M.skin, [0, 0.16, 0.005], [0.92, 1.08, 1]);
-    ball(J.neck, 0.11, M.hair, [0, 0.175, -0.018], [0.95, 1.04, 0.97]);
-    // Capelli: chignon, coda o sciolti (scelta nel benvenuto)
+    // Capelli: base per tutte le pettinature tranne «rasati» (calotta aderente)
+    if (M.style === "rasati") ball(J.neck, 0.107, M.hair, [0, 0.168, -0.004], [0.93, 1.06, 1]);
+    else if (M.style === "corti") ball(J.neck, 0.11, M.hair, [0, 0.182, -0.016], [0.96, 0.98, 0.98]);
+    else ball(J.neck, 0.11, M.hair, [0, 0.175, -0.018], [0.95, 1.04, 0.97]);
+    // Capelli: chignon, coda o sciolti (donna), corti o rasati (uomo) – scelta nel benvenuto
     if (M.style === "chignon") ball(J.neck, 0.052, M.hair, [0, 0.24, -0.1]);
     if (M.style === "coda") { ball(J.neck, 0.04, M.hair, [0, 0.22, -0.11]); ball(J.neck, 1, M.hair, [0, 0.13, -0.14], [0.035, 0.1, 0.035]); }
     if (M.style === "sciolti") ball(J.neck, 1, M.hair, [0, 0.12, -0.05], [0.105, 0.14, 0.075]);
     for (const [s, x] of [["L", 1], ["R", -1]]) {
-      J["sh" + s] = grp(J.spine, [0.165 * x, 0.42, 0]);
-      ball(J["sh" + s], 0.056, M.deltHl);
-      seg(J["sh" + s], 0.29, 0.046, 0.038, M.armHl);
+      J["sh" + s] = grp(J.spine, [SH * x, 0.42, 0]);
+      ball(J["sh" + s], 0.056 * AR, M.deltHl);
+      seg(J["sh" + s], 0.29, 0.046 * AR, 0.038 * AR, M.armHl);
       J["el" + s] = grp(J["sh" + s], [0, -0.29, 0]);
-      seg(J["el" + s], 0.26, 0.037, 0.03, M.skin);
+      seg(J["el" + s], 0.26, 0.037 * AR, 0.03 * AR, M.skin);
       J["ha" + s] = grp(J["el" + s], [0, -0.26, 0]);
       ball(J["ha" + s], 0.04, M.skin, [0, -0.035, 0], [0.75, 1.2, 0.6]);
       if (bells) {
         const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.2, 12), M.bell); bar.rotation.x = Math.PI / 2; bar.position.y = -0.04; J["ha" + s].add(bar);
         for (const z of [-0.09, 0.09]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.05, 18), M.bell); w.rotation.x = Math.PI / 2; w.position.set(0, -0.04, z); J["ha" + s].add(w); }
       }
-      J["hp" + s] = grp(J.root, [0.085 * x, -0.05, 0]);
-      seg(J["hp" + s], 0.44, 0.08, 0.055, M.thighHl);
+      J["hp" + s] = grp(J.root, [(man ? 0.08 : 0.085) * x, -0.05, 0]);
+      seg(J["hp" + s], 0.44, man ? 0.075 : 0.08, man ? 0.056 : 0.055, M.thighHl);
       J["kn" + s] = grp(J["hp" + s], [0, -0.44, 0]);
       seg(J["kn" + s], 0.42, 0.055, 0.036, M.leg);
       J["an" + s] = grp(J["kn" + s], [0, -0.42, 0]);

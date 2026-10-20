@@ -497,7 +497,9 @@
   // ---------- BENVENUTO ----------
   const LOOK = {
     hair: [["#2B211C", "Neri"], ["#4A3428", "Castani"], ["#8A5A3B", "Castano chiaro"], ["#C9A063", "Biondi"], ["#9A3B22", "Rossi"], ["#A9A6A2", "Grigi"]],
+    body: [["donna", "Donna"], ["uomo", "Uomo"]],
     style: [["chignon", "Chignon"], ["coda", "Coda"], ["sciolti", "Sciolti"]],
+    styleM: [["corti", "Corti"], ["rasati", "Rasati"]],
     top: [["#7B4F80", "Prugna"], ["#C8432B", "Corallo"], ["#2D6E68", "Verde"], ["#2E4A7D", "Blu"], ["#E7A6B6", "Rosa"], ["#F2F2F2", "Bianco"]],
     leg: [["#34444C", "Grafite"], ["#1F1F24", "Neri"], ["#5B78A8", "Jeans"], ["#7B4F80", "Prugna"]],
     skin: [["#F1C7A8", "Chiara"], ["#E3AE8F", "Media"], ["#C68E6B", "Ambrata"], ["#8D5B3F", "Scura"]]
@@ -506,16 +508,16 @@
     const w = document.createElement("div"); w.className = "welcome"; w.setAttribute("role", "dialog"); w.setAttribute("aria-modal", "true");
     document.body.appendChild(w); document.body.style.overflow = "hidden";
     let step = start, fig = null;
-    const look = { skin: "#E3AE8F", top: "#7B4F80", leg: "#34444C", hair: "#4A3428", style: "chignon", ...S.look };
+    const look = { body: "donna", skin: "#E3AE8F", top: "#7B4F80", leg: "#34444C", hair: "#4A3428", style: "chignon", ...S.look };
     const dots = n => `<div class="w-dots">${[0, 1, 2, 3, 4].map(i => `<i class="${i === n ? "on" : ""}"></i>`).join("")}</div>`;
-    const pick = (k, label) => `<div><span class="lbl">${label}</span><div class="swatches" data-k="${k}">${LOOK[k].map(([v, n]) => k === "style" ? `<button class="chip" data-v="${v}" aria-pressed="${look[k] === v}">${n}</button>` : `<button class="swatch" data-v="${v}" aria-label="${n}" aria-pressed="${look[k] === v}" style="background:${v}"></button>`).join("")}</div></div>`;
+    const pick = (k, label) => `<div><span class="lbl">${label}</span><div class="swatches" data-k="${k}">${LOOK[k === "style" && look.body === "uomo" ? "styleM" : k].map(([v, n]) => k === "style" || k === "body" ? `<button class="chip" data-v="${v}" aria-pressed="${look[k] === v}">${n}</button>` : `<button class="swatch" data-v="${v}" aria-label="${n}" aria-pressed="${look[k] === v}" style="background:${v}"></button>`).join("")}</div></div>`;
     const done = () => { if (fig && fig.stop) fig.stop(); S.welcomed = true; save(); w.remove(); document.body.style.overflow = ""; render(); };
     const STEPS = [
       () => `<div class="w-hero">👋</div><h1>Ciao! Benvenuta in Muoviamoci!</h1><p>Il tuo allenamento di casa, pensato per accompagnare il reformer del sabato: due sedute a settimana, guidate dalla voce di Isabella.</p>
         <label class="w-name"><span class="lbl">Come ti chiami?</span><input id="wname" value="${esc(S.name)}" autocomplete="given-name" placeholder="Il tuo nome"></label>`,
       () => `<div class="w-hero">🗓️</div><h1>Come funziona</h1><ul class="w-list"><li><b>Martedì e giovedì</b> una seduta di circa 40 minuti. La trovi già pronta in «Oggi».</li><li><b>Tocca un esercizio</b> per vederlo girare e ascoltare la spiegazione, prima di iniziare.</li><li><b>Premi «Inizia»</b>: Isabella ti guida con la voce e il telefono resta acceso. Puoi lasciarlo sul pavimento.</li></ul><button class="btn" id="wvoice">${I.sound} Ascolta Isabella</button>`,
       () => `<div class="w-hero">👍</div><h1>L'app impara da te</h1><ul class="w-list"><li>Dopo ogni esercizio tocca il <b>pollice verde o rosso</b>: se qualcosa non va, l'esercizio cambia da solo.</li><li>Se il <b>ginocchio</b> dà fastidio, dillo con un tocco: arriva subito un'alternativa senza carico.</li><li>A fine seduta dimmi se è stata <b>facile o dura</b>: le sedute crescono con te.</li><li>Ogni minuto di allenamento ti porta avanti in un <b>viaggio in Giappone</b>, da Tokyo a Kyoto, con le sue cartoline.</li></ul>`,
-      () => `<h1>Il tuo manichino</h1><p class="muted">Fallo somigliare a te: sarà lui a mostrarti gli esercizi.</p><div class="stage w-stage" id="wstage" style="background:var(--z-glu)"></div>${pick("hair", "Capelli")}${pick("style", "Pettinatura")}${pick("top", "Maglietta")}${pick("leg", "Leggings")}${pick("skin", "Carnagione")}`,
+      () => `<h1>Il tuo manichino</h1><p class="muted">Fallo somigliare a te: sarà lui a mostrarti gli esercizi.</p><div class="stage w-stage" id="wstage" style="background:var(--z-glu)"></div>${pick("body", "Figura")}${pick("hair", "Capelli")}${pick("style", "Pettinatura")}${pick("top", "Maglietta")}${pick("leg", look.body === "uomo" ? "Pantaloni" : "Leggings")}${pick("skin", "Carnagione")}`,
       () => `<div class="w-hero">🪞</div><h1>Specchio intelligente</h1><p>Durante alcuni esercizi in piedi (sedia, affondo, seduta al muro) il telefono può <b>guardarti con la fotocamera</b>: conta le ripetizioni e ti avvisa a voce se il ginocchio va verso l'interno o troppo in avanti.</p><p class="muted">Le immagini restano sul telefono: non vengono salvate né inviate. Puoi cambiare idea quando vuoi nelle Impostazioni.</p><div class="row"><button class="btn ${S.mirror === true ? "primary" : ""}" id="wmy">Sì, attivalo</button><button class="btn ${S.mirror === false ? "primary" : ""}" id="wmn">No, grazie</button></div>`
     ];
     function draw() {
@@ -527,7 +529,10 @@
       if (stg) {
         const mount = () => { if (fig && fig.stop) fig.stop(); stg.innerHTML = ""; window.FIG_LOOK = look; fig = figure(stg, "R5"); };
         mount();
-        w.querySelectorAll(".swatches").forEach(g => g.onclick = e => { const b = e.target.closest("button"); if (!b) return; look[g.dataset.k] = b.dataset.v; g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); S.look = { ...look }; save(); mount(); });
+        w.querySelectorAll(".swatches").forEach(g => g.onclick = e => { const b = e.target.closest("button"); if (!b) return; look[g.dataset.k] = b.dataset.v;
+          // Cambiando figura si passa alla pettinatura di partenza adatta e si ridisegnano le scelte
+          if (g.dataset.k === "body") { look.style = b.dataset.v === "uomo" ? "corti" : "chignon"; S.look = { ...look }; save(); draw(); return; }
+          g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); S.look = { ...look }; save(); mount(); });
       }
       const my = w.querySelector("#wmy"), mn = w.querySelector("#wmn");
       if (my) { my.onclick = () => { S.mirror = true; save(); draw(); }; mn.onclick = () => { S.mirror = false; save(); draw(); }; }
