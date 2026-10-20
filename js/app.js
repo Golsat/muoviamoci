@@ -358,6 +358,8 @@
         ${S.knee.length || S.excluded.length || Object.keys(S.tweak).length ? `<p class="muted">Modifiche automatiche: ${[...S.knee.map(id => BY[id].n + " (ginocchio)"), ...S.excluded.map(id => BY[id].n + " (escluso)"), ...Object.entries(S.tweak).map(([id, v]) => `${BY[id].n} (${v > 0 ? "+" : ""}${v}")`)].map(esc).join(", ")}</p><button class="btn small ghost" id="resetauto">Annulla le modifiche automatiche</button>` : ""}
       </section>
       <section class="card"><h3>Sedute fatte</h3>${S.history.length ? `<div class="list">${S.history.slice().reverse().map(h => `<div class="between"><span>${esc(P.fmt(h.date))} · ${esc(h.title)}</span><span class="muted num">${h.min} min · ${esc(h.rating || "")}</span></div>`).join("")}</div>` : '<p class="muted">Ancora nessuna.</p>'}</section>
+      <section class="card"><h3>App</h3><p class="muted">Versione: <b id="ver">…</b></p><p class="muted" id="updmsg" hidden></p>
+        <div class="row"><button class="btn small" id="chkupd">Controlla aggiornamenti</button></div></section>
       <section class="card"><h3>Copia di sicurezza</h3><p class="muted">Salva i tuoi dati in un file, per non perderli se cambi telefono.</p>
         <div class="row"><button class="btn small" id="exp">Salva copia</button><label class="btn small ghost" for="imp">Ripristina</label><input type="file" id="imp" accept="application/json,.json" hidden></div></section>
     </main>`;
@@ -370,6 +372,8 @@
     };
     app.querySelectorAll("[data-repl]").forEach(b => b.onclick = () => { S.excluded.push(b.dataset.repl); save(); toast("Sostituito con un esercizio equivalente"); renderProg(); });
     const ra = $("#resetauto"); if (ra) ra.onclick = () => { S.knee = []; S.excluded = []; S.tweak = {}; save(); renderProg(); };
+    showVersion();
+    $("#chkupd").onclick = checkUpdate;
     $("#exp").onclick = () => saveFile(`muoviamoci-copia-${P.today()}.json`, JSON.stringify(S, null, 1), "application/json");
     $("#imp").onchange = e => {
       const f = e.target.files[0]; if (!f) return;
@@ -796,20 +800,41 @@
   // Ritorno all'app un altro giorno: la schermata si aggiorna con la data nuova
   let shownDay = P.today();
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && P.today() !== shownDay) { shownDay = P.today(); if (!document.querySelector(".player")) render(); } });
+  let swReg = null, hadController = false;
+  if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.tipo === "versione") { const v = $("#ver"); if (v) v.textContent = `${e.data.built} (${e.data.v})`; } });
   if ("serviceWorker" in navigator && location.protocol === "https:") {
-    const hadController = !!navigator.serviceWorker.controller;
+    hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.register("sw.js").then(reg => {
-      reg.addEventListener("updatefound", () => {
-        const w = reg.installing; if (!w) return;
-        w.addEventListener("statechange", () => {
-          if (w.state !== "activated") return;
-          if (hadController) updateBanner();
-          else if (!S.offlineReady) { S.offlineReady = true; save(); toast("Pronta: da ora funziona anche senza internet"); }
-        });
-      });
+      swReg = reg;
+      if (reg.installing) watchWorker(reg.installing); // aggiornamento già partito all'apertura: prima andava perso
+      reg.addEventListener("updatefound", () => { if (reg.installing) watchWorker(reg.installing); });
       // Controlla gli aggiornamenti ogni volta che l'app torna in primo piano
       document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => { }); });
     }).catch(() => { });
+  }
+  function watchWorker(w) {
+    if (w.watched) return; w.watched = true;
+    w.addEventListener("statechange", () => {
+      if (w.state === "redundant") { const m = $("#updmsg"); if (m) m.textContent = "Aggiornamento non riuscito: riprova con internet."; }
+      if (w.state !== "activated") return;
+      if (hadController) updateBanner();
+      else if (!S.offlineReady) { S.offlineReady = true; save(); toast("Pronta: da ora funziona anche senza internet"); }
+    });
+  }
+  function showVersion() {
+    const v = $("#ver"); if (!v) return;
+    const c = "serviceWorker" in navigator && navigator.serviceWorker.controller;
+    if (c) c.postMessage("versione"); else v.textContent = "non ancora installata (apri con internet)";
+  }
+  function checkUpdate() {
+    const m = $("#updmsg"); m.hidden = false;
+    if (!swReg) { m.textContent = "Controllo possibile solo dall'app installata, con internet."; return; }
+    m.textContent = "Controllo…";
+    swReg.update().then(() => {
+      const w = swReg.installing || swReg.waiting;
+      if (w) { watchWorker(w); m.textContent = "Nuova versione trovata: la sto scaricando (la prima volta può volerci qualche minuto). Poi compare «Nuova versione pronta»."; }
+      else m.textContent = "Hai già l'ultima versione.";
+    }).catch(() => { m.textContent = "Nessuna connessione: riprova con internet."; });
   }
   function updateBanner() {
     if (document.querySelector(".upd")) return;

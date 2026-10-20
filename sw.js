@@ -1,5 +1,6 @@
-// Generato da tools/build_sw.mjs – versione 4b790439ed
-const CACHE = "muoviamoci-4b790439ed";
+// Generato da tools/build_sw.mjs – versione beda2e2468
+const BUILT = "20/10/2026 11:20";
+const CACHE = "muoviamoci-beda2e2468";
 const AUDIO = "muoviamoci-audio";
 const VISION = "muoviamoci-vision-1";
 const FILES = ["./","index.html","manifest.webmanifest","css/app.css","js/app.js","js/audio.js","js/clips.js","js/data.js","js/figures.js","js/figures3d.js","js/program.js","js/specchio.js","js/three.min.js","js/viaggio.js","fonts/bricolage.woff2","fonts/figtree.woff2","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png"];
@@ -21,6 +22,8 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("muoviamoci-") && ![CACHE, AUDIO, VISION].includes(k)).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
+// L'app chiede la versione installata (Progressi → «App»)
+self.addEventListener("message", e => { if (e.data === "versione" && e.source) e.source.postMessage({ tipo: "versione", v: CACHE.slice(11), built: BUILT }); });
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   // Specchio intelligente: libreria e modello scaricati solo al primo uso, poi tenuti a parte
